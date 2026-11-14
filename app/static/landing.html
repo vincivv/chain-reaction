@@ -8,7 +8,7 @@
 :root{
   --bg:#04060a; --panel:rgba(8,12,18,.78); --line:#16212e; --line2:#27384d;
   --txt:#cfd9e4; --dim:#73849a; --faint:#3b4a5d;
-  --cyan:#3ff0ff; --amber:#ffb627; --red:#ff2d6f; --green:#3dffa2; --violet:#b47cff;
+  --cyan:#3ff0ff; --amber:#ffb627; --red:#ff2d6f; --green:#3dffa2; --violet:#b47cff; --blue:#4d9bff; --orange:#ff7a2d;
   --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
   --sans:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Helvetica,Arial,sans-serif;
 }
@@ -56,10 +56,50 @@ section{max-width:1120px;margin:0 auto;padding:90px 20px}
 .node b{display:block;font:600 13px var(--mono);letter-spacing:.12em;color:#fff;text-transform:uppercase}
 .node span{display:block;font:11px var(--mono);color:var(--c);margin-top:4px}
 .node small{display:block;font-size:12px;color:var(--dim);margin-top:4px}
-#wire{position:absolute;left:10%;right:10%;top:48px;height:2px;z-index:1}
-#wire line{stroke:var(--line2);stroke-width:2}
-#wire .pulse{stroke:var(--cyan);stroke-width:2;stroke-dasharray:14 90;animation:flow 2.2s linear infinite;filter:drop-shadow(0 0 4px var(--cyan))}
-@keyframes flow{to{stroke-dashoffset:-104}}
+#wire{position:absolute;left:10%;right:10%;top:47px;height:2px;background:linear-gradient(90deg,var(--violet),var(--cyan),var(--amber),var(--red),var(--green));opacity:.55;z-index:1;overflow:hidden}
+#wire::after{content:"";position:absolute;top:0;left:-15%;width:15%;height:100%;background:linear-gradient(90deg,transparent,#fff,transparent);animation:flow 2.6s linear infinite}
+@keyframes flow{to{left:100%}}
+
+/* tier gauge */
+#gauge{margin-top:34px;padding:20px 22px}
+#gauge .g{position:relative;height:14px;margin:30px 0 26px;background:linear-gradient(90deg,#1d2a38 0 30%,var(--amber) 30% 60%,var(--red) 60% 100%);box-shadow:0 0 18px rgba(255,45,111,.25)}
+#gauge .g .tk{position:absolute;top:-22px;transform:translateX(-50%);font:11px var(--mono);color:var(--dim)}
+#gauge .g .tk::after{content:"";position:absolute;left:50%;top:18px;width:1px;height:26px;background:var(--dim)}
+#gauge .g .zn{position:absolute;top:22px;transform:translateX(-50%);font:600 11px var(--mono);letter-spacing:.16em}
+#gauge .needle{position:absolute;top:-6px;width:3px;height:26px;background:#fff;box-shadow:0 0 10px #fff;left:0;transition:left 2s cubic-bezier(.2,.8,.2,1)}
+
+/* physics */
+#phys{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:18px;align-items:stretch}
+#phys .frame{padding:22px}
+.eq{font:600 clamp(18px,2.4vw,26px)/1.5 var(--mono);color:#fff;text-shadow:0 0 14px rgba(63,240,255,.6)}
+.eq .c{color:var(--cyan)} .eq .a{color:var(--amber)} .eq .r{color:var(--red)}
+.vars{margin-top:16px;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font:12px var(--mono);color:var(--dim)}
+.vars b{color:var(--cyan);font-weight:600}
+.ctl{display:flex;align-items:center;gap:12px;font:12px var(--mono);color:var(--dim);margin-top:10px}
+.ctl input{flex:1;accent-color:var(--cyan)}
+.ctl output{color:#fff;min-width:56px;text-align:right}
+#curve{width:100%;height:280px;display:block}
+#curve text{font:10px var(--mono);fill:var(--dim)}
+
+/* hazards */
+#haz{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.hz{text-align:center;padding:16px 8px}
+.hz .ring{height:150px;display:grid;place-items:center}
+.hz .ring i{display:block;border-radius:50%;border:1px solid var(--c);background:radial-gradient(circle,color-mix(in srgb,var(--c) 30%,transparent),transparent 70%);
+  box-shadow:0 0 16px color-mix(in srgb,var(--c) 50%,transparent);animation:breathe 3s ease-in-out infinite}
+@keyframes breathe{50%{transform:scale(.9);opacity:.7}}
+.hz b{display:block;font:600 12px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:#fff}
+.hz span{font:12px var(--mono);color:var(--c)}
+
+/* backtest */
+#bt{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+#bt .frame{padding:18px}
+#bt .yr{font:11px var(--mono);color:var(--dim);letter-spacing:.14em}
+#bt .q{font:600 15px var(--mono);color:#fff;margin:4px 0 2px}
+#bt .m{font:12px var(--mono);color:var(--amber)}
+#bt .hit{margin-top:14px;display:flex;align-items:center;gap:8px;font:12px var(--mono);color:var(--txt)}
+#bt .hit i{width:9px;height:9px;border-radius:50%;background:var(--red);box-shadow:0 0 10px var(--red)}
+#bt .ok{margin-top:14px;font:600 11px var(--mono);letter-spacing:.16em;color:var(--green);text-shadow:0 0 10px var(--green)}
 
 /* three decisions */
 #dec{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:56px}
@@ -96,6 +136,7 @@ footer .btn{margin-bottom:22px}
   #flow{grid-template-columns:1fr;gap:28px} #wire{display:none}
   #dec,#big{grid-template-columns:1fr 1fr} #dec{grid-template-columns:1fr}
   .lane{grid-template-columns:90px 1fr 80px} #readout{display:none}
+  #phys{grid-template-columns:1fr} #haz,#bt{grid-template-columns:1fr 1fr}
 }
 </style>
 </head>
@@ -121,10 +162,10 @@ footer .btn{margin-bottom:22px}
   <div class="hud scroll">SCROLL</div>
 </div>
 
-<section>
+<section id="s-flow">
   <div class="sh"><div class="lbl">how it works</div><h2>Document in. Decisions out.</h2></div>
   <div id="flow">
-    <svg id="wire" preserveAspectRatio="none" viewBox="0 0 100 2"><line x1="0" y1="1" x2="100" y2="1"/><line class="pulse" x1="0" y1="1" x2="100" y2="1"/></svg>
+    <div id="wire"></div>
     <div class="node" style="--c:var(--violet)"><div class="orb"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5M9 12h8M9 16h8"/></svg></div>
       <b>Supplier list</b><span>PDF · XLSX</span><small>Apple, adidas</small></div>
     <div class="node" style="--c:var(--cyan)"><div class="orb"><svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/></svg></div>
@@ -157,6 +198,51 @@ footer .btn{margin-bottom:22px}
         <div class="bar" style="--c:var(--red)"><span>activate backup</span><div class="tr"><i data-w="20"></i></div><em>20%</em></div>
       </div></div>
   </div>
+
+  <div class="frame" id="gauge">
+    <div class="lbl">chance of disruption → tier</div>
+    <div class="g">
+      <span class="tk" style="left:0">0</span><span class="tk" style="left:30%">0.3</span><span class="tk" style="left:60%">0.6</span><span class="tk" style="left:100%">1</span>
+      <span class="zn" style="left:15%;color:var(--dim)">CLEAR</span><span class="zn" style="left:45%;color:var(--amber)">REVIEW</span><span class="zn" style="left:80%;color:var(--red)">ALERT</span>
+      <div class="needle" data-to="81"></div>
+    </div>
+  </div>
+</section>
+
+<section id="s-physics">
+  <div class="sh"><div class="lbl">the physics</div><h2>How hard does it shake at your factory?</h2></div>
+  <div id="phys">
+    <div class="frame">
+      <div class="lbl" style="margin-bottom:12px">shaking intensity (Modified Mercalli)</div>
+      <div class="eq"><span class="c">MMI</span> = 1.68·<span class="a">M</span> − 3.29 − 0.0206·<span class="r">R</span></div>
+      <div class="eq"><span class="r">R</span> = √(d² + h²)</div>
+      <div class="vars">
+        <b>M</b><span>magnitude (USGS)</span>
+        <b>d</b><span>distance to epicentre, km</span>
+        <b>h</b><span>depth, km</span>
+        <b>reach</b><span>where MMI drops to 3.5</span>
+      </div>
+      <div class="ctl">M <input id="sM" type="range" min="5" max="8.5" step="0.1" value="7.4"><output id="oM">7.4</output></div>
+      <div class="ctl">h <input id="sH" type="range" min="5" max="150" step="5" value="40"><output id="oH">40 km</output></div>
+    </div>
+    <div class="frame"><svg id="curve"></svg></div>
+  </div>
+</section>
+
+<section id="s-hazards">
+  <div class="sh"><div class="lbl">not only earthquakes</div><h2>Every hazard has a reach.</h2></div>
+  <div id="haz"></div>
+</section>
+
+<section id="s-backtest">
+  <div class="sh"><div class="lbl">backtest</div><h2>Real quakes. Real suppliers hit.</h2></div>
+  <div id="bt">
+    <div class="frame"><div class="yr">3 APR 2024</div><div class="q">Hualien, Taiwan</div><div class="m">M 7.4</div><div class="hit"><i></i>TSMC</div><div class="ok">✓ ON ALERT</div></div>
+    <div class="frame"><div class="yr">1 JAN 2024</div><div class="q">Noto, Japan</div><div class="m">M 7.5</div><div class="hit"><i></i>Murata</div><div class="ok">✓ ON ALERT</div></div>
+    <div class="frame"><div class="yr">16 MAR 2022</div><div class="q">Fukushima, Japan</div><div class="m">M 7.3</div><div class="hit"><i></i>Murata</div><div class="hit" style="margin-top:6px"><i></i>Sony</div><div class="ok">✓ BOTH ON ALERT</div></div>
+    <div class="frame"><div class="yr">16 APR 2016</div><div class="q">Kumamoto, Japan</div><div class="m">M 7.0</div><div class="hit"><i></i>Sony</div><div class="ok">✓ ON ALERT</div></div>
+  </div>
+  <div class="lbl" style="text-align:center;margin-top:18px">suppliers that publicly reported production hits · all 5 flagged</div>
 </section>
 
 <section id="race">
@@ -195,11 +281,11 @@ footer .btn{margin-bottom:22px}
 <script>
 // Real past incidents the backtest uses; reach is roughly what the engine computes.
 const EVENTS = [
-  {name:"M 7.4 · Hualien, Taiwan · 2024", lat:23.84, lon:121.6, reach:420},
-  {name:"M 7.5 · Noto, Japan · 2024", lat:37.49, lon:137.27, reach:400},
-  {name:"M 5.6 · Cianjur, Indonesia · 2022", lat:-6.86, lon:107.0, reach:120},
-  {name:"M 7.3 · Fukushima, Japan · 2022", lat:37.7, lon:141.58, reach:380},
-  {name:"M 7.0 · Kumamoto, Japan · 2016", lat:32.75, lon:130.76, reach:360},
+  {name:"M 7.4 · Hualien, Taiwan · 2024", lat:23.84, lon:121.6, reach:274},
+  {name:"M 7.5 · Noto, Japan · 2024", lat:37.49, lon:137.27, reach:282},
+  {name:"M 5.6 · Cianjur, Indonesia · 2022", lat:-6.86, lon:107.0, reach:127},
+  {name:"M 7.3 · Fukushima, Japan · 2022", lat:37.7, lon:141.58, reach:265},
+  {name:"M 7.0 · Kumamoto, Japan · 2016", lat:32.75, lon:130.76, reach:241},
 ];
 const cv = document.getElementById("map"), ctx = cv.getContext("2d");
 let W, H, DPR, proj, path, land, sites = [], ev = 0, t0 = performance.now();
@@ -213,15 +299,18 @@ function size(){
   path = d3.geoPath(proj, ctx);
 }
 
+// ?still loads synchronously so headless screenshots see the finished frame
+function getJSON(u){ if (!STILL) return fetch(u).then(r => r.json()); const x = new XMLHttpRequest(); x.open("GET", u, false); x.send(); return Promise.resolve(JSON.parse(x.responseText)); }
 async function load(){
-  const world = await fetch("/static/world.json").then(r => r.json());
+  const world = await getJSON("/static/world.json");
   land = topojson.feature(world, world.objects.countries);
   for (const c of ["apple", "adidas"]) {
-    try { const s = await fetch("/api/state?company=" + c).then(r => r.json()); sites.push(...s.sites.filter(x => x.lat != null)); } catch(e){}
+    try { const s = await getJSON("/api/state?company=" + c); sites.push(...s.sites.filter(x => x.lat != null)); } catch(e){}
   }
   // jitter sites that share a centroid so clusters read as clusters
   sites.forEach(s => { s.jx = (Math.random()-.5)*0.8; s.jy = (Math.random()-.5)*0.8; });
   nextEvent(true);
+  if (STILL) frame(t0 + 2500);
 }
 
 function nextEvent(first){
@@ -230,7 +319,7 @@ function nextEvent(first){
   const e = EVENTS[ev];
   sites.forEach(s => { s.d = hav(e.lat, e.lon, s.lat, s.lon); });
   const inR = sites.filter(s => s.d <= e.reach);
-  const alert = inR.filter(s => s.d < e.reach*0.35).length, review = inR.filter(s => s.d >= e.reach*0.35 && s.d < e.reach*0.6).length;
+  const alert = inR.filter(s => s.d < e.reach*0.55).length, review = inR.filter(s => s.d >= e.reach*0.55 && s.d < e.reach*0.8).length;
   document.getElementById("evName").textContent = e.name;
   ["evReach","evAlert","evReview"].forEach(id => document.getElementById(id).textContent = "0");
   document.getElementById("evMs").textContent = "…";
@@ -239,13 +328,14 @@ function nextEvent(first){
     document.getElementById("evAlert").textContent = alert;
     document.getElementById("evReview").textContent = review;
     document.getElementById("evMs").textContent = (0.4 + inR.length/300).toFixed(1) + " s";
-  }, 1600);
+  }, STILL ? 0 : 1600);
 }
 
 const DUR = 5200;
 function frame(now){
   if (!land) { requestAnimationFrame(frame); return; }
-  const e = EVENTS[ev], k = Math.min(1, (now - t0)/1800), age = now - t0;
+  if (STILL) now = t0 + 2500;
+  const age = Math.max(0, now - t0), e = EVENTS[ev], k = Math.min(1, age/1800);
   ctx.clearRect(0, 0, W, H);
   // graticule + land
   ctx.beginPath(); path(d3.geoGraticule10()); ctx.strokeStyle = "rgba(63,240,255,.05)"; ctx.lineWidth = .5; ctx.stroke();
@@ -261,8 +351,8 @@ function frame(now){
     const p = proj([s.lon + s.jx, s.lat + s.jy]); if (!p) continue;
     let col = "rgba(63,240,255,.75)", r = 1.4, glow = 4;
     if (s.d <= e.reach * d3.easeCubicOut(k)) {
-      if (s.d < e.reach*0.35) { col = "#ff2d6f"; r = 2.6; glow = 12; }
-      else if (s.d < e.reach*0.6) { col = "#ffb627"; r = 2.1; glow = 9; }
+      if (s.d < e.reach*0.55) { col = "#ff2d6f"; r = 2.6; glow = 12; }
+      else if (s.d < e.reach*0.8) { col = "#ffb627"; r = 2.1; glow = 9; }
       else { col = "#3ff0ff"; r = 1.8; glow = 7; }
     }
     ctx.shadowColor = col; ctx.shadowBlur = glow; ctx.fillStyle = col;
@@ -287,6 +377,8 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 
+const STILL = location.search.includes("still");
+if (STILL) document.getElementById("hero").style.height = "900px";
 addEventListener("resize", size); size(); load(); requestAnimationFrame(frame);
 
 // animate bars and counters when they scroll into view
@@ -304,6 +396,45 @@ const io = new IntersectionObserver(es => es.forEach(x => {
   io.unobserve(x.target);
 }), {threshold: .35});
 document.querySelectorAll("#dec, #race .frame, #big").forEach(el => io.observe(el));
+const io2 = new IntersectionObserver(es => es.forEach(x => { if (x.isIntersecting) { x.target.querySelector(".needle").style.left = "81%"; io2.disconnect(); } }), {threshold:.5});
+io2.observe(document.getElementById("gauge"));
+
+// shaking curve: the same formula the engine uses
+const MMI_COL = ["#3b4a5d","#3b4a5d","#3b4a5d","#4d9bff","#3ff0ff","#3dffa2","#ffb627","#ff7a2d","#ff2d6f","#ff2d6f","#ff2d6f"];
+const MMI_TXT = {4:"felt indoors",5:"objects fall",6:"light damage",7:"moderate damage",8:"heavy damage"};
+function drawCurve(){
+  const M = +sM.value, h = +sH.value; oM.textContent = M.toFixed(1); oH.textContent = h + " km";
+  const svg = d3.select("#curve"), w = svg.node().clientWidth, ht = 280, m = {l:34, r:14, t:14, b:28};
+  svg.selectAll("*").remove(); svg.attr("viewBox", `0 0 ${w} ${ht}`);
+  const x = d3.scaleLinear([0, 600], [m.l, w - m.r]), y = d3.scaleLinear([1, 10], [ht - m.b, m.t]);
+  const mmi = d => Math.max(1, Math.min(10, 1.68*M - 3.29 - 0.0206*Math.sqrt(d*d + h*h)));
+  for (let k = 3; k <= 9; k++) {
+    svg.append("rect").attr("x", m.l).attr("width", w - m.l - m.r).attr("y", y(k+1)).attr("height", y(k) - y(k+1)).attr("fill", MMI_COL[k]).attr("opacity", .06);
+    if (MMI_TXT[k]) svg.append("text").attr("x", w - m.r - 4).attr("y", y(k+0.5) + 3).attr("text-anchor", "end").attr("fill", MMI_COL[k]).attr("opacity", .8).text(MMI_TXT[k]);
+  }
+  svg.append("g").attr("transform", `translate(0,${ht - m.b})`).call(d3.axisBottom(x).ticks(6).tickFormat(d => d + " km")).call(g => g.selectAll("line,path").attr("stroke", "#27384d"));
+  svg.append("g").attr("transform", `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(9)).call(g => g.selectAll("line,path").attr("stroke", "#27384d"));
+  const pts = d3.range(0, 601, 4).map(d => [d, mmi(d)]);
+  const defs = svg.append("defs"), gr = defs.append("linearGradient").attr("id", "cg").attr("x1", 0).attr("x2", 0).attr("y1", 0).attr("y2", 1);
+  gr.append("stop").attr("offset", 0).attr("stop-color", "#ff2d6f"); gr.append("stop").attr("offset", .5).attr("stop-color", "#ffb627"); gr.append("stop").attr("offset", 1).attr("stop-color", "#3ff0ff");
+  svg.append("path").attr("d", d3.area().x(p => x(p[0])).y0(y(1)).y1(p => y(p[1]))(pts)).attr("fill", "url(#cg)").attr("opacity", .14);
+  svg.append("path").attr("d", d3.line().x(p => x(p[0])).y(p => y(p[1]))(pts)).attr("fill", "none").attr("stroke", "url(#cg)").attr("stroke-width", 2.5).style("filter", "drop-shadow(0 0 6px #ff2d6f)");
+  svg.append("line").attr("x1", m.l).attr("x2", w - m.r).attr("y1", y(3.5)).attr("y2", y(3.5)).attr("stroke", "#3ff0ff").attr("stroke-dasharray", "4 4");
+  const reach = Math.max(80, Math.min(700, (1.68*M - 3.29 - 3.5)/0.0206));
+  if (reach <= 600) {
+    svg.append("line").attr("x1", x(reach)).attr("x2", x(reach)).attr("y1", y(3.5)).attr("y2", ht - m.b).attr("stroke", "#3ff0ff").attr("opacity", .6);
+    svg.append("circle").attr("cx", x(reach)).attr("cy", y(3.5)).attr("r", 5).attr("fill", "#3ff0ff").style("filter", "drop-shadow(0 0 6px #3ff0ff)");
+    svg.append("text").attr("x", x(reach) + 8).attr("y", y(3.5) - 8).attr("fill", "#3ff0ff").style("font-size", "12px").text(`reach ≈ ${Math.round(reach)} km`);
+  }
+  svg.append("text").attr("x", x(4)).attr("y", y(mmi(0)) - 8).attr("fill", "#fff").style("font-size", "12px").text(`MMI ${mmi(0).toFixed(1)} at the epicentre`);
+}
+sM.oninput = sH.oninput = drawCurve; addEventListener("resize", drawCurve); drawCurve();
+
+// hazard reach rings, drawn to scale
+const HAZ = [["policy","export ban, sanctions",600,"--violet"],["cyclone","GDACS",350,"--cyan"],["conflict","GDELT news",300,"--red"],["earthquake","USGS · by formula",274,"--amber"],
+             ["port","shipping disruption",250,"--blue"],["flood","GDACS",250,"--cyan"],["strike","labour, GDELT",150,"--orange"],["wildfire","GDACS",120,"--green"]];
+document.getElementById("haz").innerHTML = HAZ.map(([k, s, km, c], i) =>
+  `<div class="hz frame" style="--c:var(${c})"><div class="ring"><i style="width:${30 + km/600*110}px;height:${30 + km/600*110}px;animation-delay:${i*.3}s"></i></div><b>${k}</b><span>${km} km</span><div class="lbl" style="margin-top:4px">${s}</div></div>`).join("");
 </script>
 </body>
 </html>
