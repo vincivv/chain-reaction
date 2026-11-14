@@ -122,6 +122,9 @@ except Exception: pass
 @app.get("/")
 def index(): return send_from_directory(app.static_folder, "index.html")
 
+@app.get("/landing")
+def landing(): return send_from_directory(app.static_folder, "landing.html")
+
 @app.get("/api/state")
 def state():
     cs = engine.companies(); key = co(); c = cs[key]
