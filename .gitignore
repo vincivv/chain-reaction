@@ -1,0 +1,34 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# node
+node_modules/
+dist/
+
+# data and caches (downloaded screenshots, model outputs)
+data/images/
+data/cache/*
+!data/cache/features.json
+!data/cache/winner_224.json
+*.log
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+.pylib/
+data/clean/
+.claude/
+data/apple-supplier-list.pdf
+
+# local backups and caches
+__pycache__/
+*.pyc

@@ -1,0 +1,839 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loading…</title>
+<style>
+:root{
+  --bg:#04060a; --panel:rgba(8,12,18,.78); --panel2:rgba(20,30,44,.55); --line:#16212e; --line2:#27384d;
+  --txt:#cfd9e4; --dim:#73849a; --faint:#3b4a5d;
+  --cyan:#3ff0ff; --cyan-dim:#1c7f8f; --amber:#ffb627; --red:#ff2d6f; --green:#3dffa2; --violet:#b47cff; --blue:#4d9bff; --orange:#ff7a2d;
+  --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--txt);font:13px/1.4 var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden}
+a{color:var(--cyan);text-decoration:none} a:hover{text-decoration:underline}
+button,select{font:inherit;color:inherit}
+.mono,.num,.lbl{font-family:var(--mono)} .num{font-variant-numeric:tabular-nums}
+.lbl{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+/* map fills the viewport; everything else floats over it */
+#mapwrap{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 45%,#07101a 0%,#04060a 70%)}
+#map{display:block;width:100%;height:100%;cursor:grab} #map:active{cursor:grabbing}
+#app{position:fixed;inset:0;display:grid;gap:6px;padding:6px;pointer-events:none;
+  grid-template-columns:300px minmax(0,1fr) 350px;grid-template-rows:auto auto minmax(0,1fr) 150px;
+  grid-template-areas:"top top top" "tick tick tick" "feed mid impact" "bottom bottom bottom"}
+.panel{position:relative;background:var(--panel);border:1px solid var(--line);min-width:0;min-height:0;display:flex;flex-direction:column;
+  pointer-events:auto;-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px)}
+.panel::before,.panel::after{content:"";position:absolute;width:9px;height:9px;pointer-events:none;z-index:3}
+.panel::before{top:-1px;left:-1px;border-top:1px solid var(--cyan);border-left:1px solid var(--cyan)}
+.panel::after{bottom:-1px;right:-1px;border-bottom:1px solid var(--cyan);border-right:1px solid var(--cyan)}
+.ph{display:flex;align-items:center;gap:10px;padding:6px 10px;border-bottom:1px solid var(--line);font:10.5px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--dim);flex:none}
+.ph b{color:var(--txt);font-weight:600} .ph .sp{flex:1}
+.pb{flex:1;min-height:0;overflow:auto}
+.pb::-webkit-scrollbar{width:6px;height:6px} .pb::-webkit-scrollbar-thumb{background:var(--line2)}
+.err{margin:8px 10px;padding:6px 8px;border:1px solid var(--red);color:var(--red);font:11px var(--mono);background:rgba(255,45,111,.07)}
+.empty{padding:12px 10px;color:var(--dim);font:11px var(--mono);letter-spacing:.06em}
+.btn{background:rgba(6,10,15,.6);border:1px solid var(--line2);padding:4px 9px;font:10.5px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--cyan);cursor:pointer;pointer-events:auto}
+.btn:hover:not(:disabled){border-color:var(--cyan);background:rgba(63,240,255,.09);box-shadow:0 0 10px rgba(63,240,255,.25)}
+.btn:disabled{color:var(--faint);cursor:not-allowed}
+/* top bar */
+#top{grid-area:top;flex-direction:row;align-items:center;gap:16px;padding:7px 12px;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;min-width:0}
+#name{font:600 16px var(--mono);letter-spacing:.22em;text-transform:uppercase;color:#fff;text-shadow:0 0 12px rgba(63,240,255,.55)}
+#tagline{font-size:11.5px;color:var(--dim)}
+.doc{display:flex;flex-direction:column;min-width:0;border-left:1px solid var(--line);padding-left:14px;gap:2px}
+.doc a{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px}
+.cosel{display:flex;align-items:center;gap:6px}
+#companySel{background:#070c12;border:1px solid var(--line2);color:#fff;font:600 11.5px var(--mono);padding:2px 6px;letter-spacing:.06em;max-width:230px;cursor:pointer}
+#fictag{display:none;font:9px var(--mono);letter-spacing:.14em;border:1px solid var(--amber);color:var(--amber);padding:0 4px}
+.ctrs{display:flex;gap:14px;margin-left:auto;flex-wrap:wrap}
+.ctr{display:flex;flex-direction:column;align-items:flex-end;min-width:52px}
+.ctr .num{font-size:14px;color:#fff}
+#clockwrap{display:flex;flex-direction:column;align-items:flex-end;border-left:1px solid var(--line);padding-left:12px}
+#clock{font-size:14px;color:var(--cyan);text-shadow:0 0 8px rgba(63,240,255,.5)}
+#ticker{grid-area:tick;flex-direction:row;align-items:center;gap:10px;padding:4px 12px;font:11px var(--mono);letter-spacing:.06em;white-space:nowrap;overflow:hidden}
+#ticker .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);flex:none;animation:blink 1.6s ease-in-out infinite}
+#ticker.hot .dot{background:var(--red);box-shadow:0 0 10px var(--red)}
+#tickText{overflow:hidden;text-overflow:ellipsis;color:var(--txt)} #tickText b{color:var(--red);font-weight:600} #tickText i{font-style:normal;color:var(--dim)}
+@keyframes blink{50%{opacity:.35}}
+/* feed */
+#feed{grid-area:feed}
+.tabs{display:flex;flex:none;border-bottom:1px solid var(--line)}
+.tab{flex:1;background:transparent;border:0;border-bottom:2px solid transparent;padding:6px 4px;font:10px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);cursor:pointer}
+.tab.on{color:var(--cyan);border-bottom-color:var(--cyan)}
+.ev{display:grid;grid-template-columns:auto 1fr;gap:3px 8px;padding:7px 10px;border-bottom:1px solid var(--line);cursor:pointer}
+.ev:hover{background:var(--panel2)} .ev.sel{background:rgba(63,240,255,.09);box-shadow:inset 2px 0 0 var(--cyan)}
+#feed.busy .ev{pointer-events:none;opacity:.6}
+.kind{font:9.5px var(--mono);letter-spacing:.1em;border:1px solid currentColor;color:var(--cyan);padding:1px 4px;align-self:start;text-transform:uppercase;white-space:nowrap}
+.k-earthquake{color:var(--red)} .k-cyclone{color:var(--violet)} .k-flood{color:var(--blue)} .k-volcano,.k-wildfire{color:var(--orange)}
+.k-strike{color:var(--amber)} .k-conflict{color:#ff3b3b} .k-port{color:var(--cyan)} .k-policy{color:var(--green)}
+.ev .t{font-size:12px;color:var(--txt);line-height:1.3}
+.ev .m{grid-column:2;font:10.5px var(--mono);color:var(--dim);display:flex;gap:8px;flex-wrap:wrap}
+.ev .note{grid-column:2;font-size:11px;color:var(--dim)} .ev .sum{grid-column:2;font-size:11px;color:#9fb0c3}
+.al-red{color:var(--red)} .al-orange{color:var(--amber)} .al-green{color:var(--green)}
+/* map layers */
+.grat{fill:none;stroke:#0d1a27;stroke-width:.5;vector-effect:non-scaling-stroke}
+.sphere{fill:#05080d;stroke:#12303b;stroke-width:1;vector-effect:non-scaling-stroke}
+.land{fill:#0a131d;stroke:#2c6272;stroke-width:.6;vector-effect:non-scaling-stroke}
+.reachglow{fill:none;stroke:var(--red);stroke-width:7;opacity:.10;vector-effect:non-scaling-stroke}
+.reach{fill:rgba(255,45,111,.13);stroke:var(--red);stroke-width:1.1;vector-effect:non-scaling-stroke;cursor:pointer}
+.reach.focus{stroke-dasharray:6 4;fill:rgba(255,45,111,.09)}
+.linkglow{fill:none;stroke:var(--red);stroke-width:4;opacity:.13;vector-effect:non-scaling-stroke}
+.link{fill:none;stroke:#ff7fa6;stroke-width:.8;opacity:.8;vector-effect:non-scaling-stroke}
+.site{cursor:pointer;stroke:none}
+.site.idle{fill:var(--cyan);opacity:.85} .site.clear{fill:#2aa7b8;opacity:.9} .site.review{fill:var(--amber)} .site.alert{fill:#fff}
+.halo{fill:none;stroke:var(--red);stroke-width:1.4;transform-box:fill-box;transform-origin:center;animation:halo 1.8s ease-out infinite;pointer-events:none}
+@keyframes halo{0%{transform:scale(.35);opacity:.95}100%{transform:scale(1.25);opacity:0}}
+.evm{cursor:pointer;pointer-events:all}
+.ring{fill:none;stroke-width:1.5;transform-box:fill-box;transform-origin:center;animation:pulse 2.4s linear infinite;opacity:0}
+.ring.r2{animation-delay:.8s} .ring.r3{animation-delay:1.6s}
+@keyframes pulse{0%{transform:scale(.12);opacity:1}100%{transform:scale(1);opacity:0}}
+.evlab rect{fill:rgba(4,7,11,.86);stroke-width:1}
+.evlab text{font:10px var(--mono);letter-spacing:.08em;fill:#fff}
+.selring{fill:none;stroke:#fff;stroke-width:1.4}
+.scanlines{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(to bottom,rgba(255,255,255,.014) 0 1px,transparent 1px 3px)}
+#scan{position:absolute;inset:0;pointer-events:none;display:none;overflow:hidden}
+#scan.on{display:block}
+#scan i{position:absolute;top:0;bottom:0;width:2px;background:var(--cyan);box-shadow:0 0 22px 5px rgba(63,240,255,.4);animation:sweep 1.5s linear infinite}
+@keyframes sweep{from{left:-2%}to{left:102%}}
+#scan span{position:absolute;top:104px;left:50%;transform:translateX(-50%);font:11px var(--mono);letter-spacing:.3em;color:var(--cyan);background:rgba(4,7,11,.88);border:1px solid var(--cyan-dim);padding:5px 12px;box-shadow:0 0 14px rgba(63,240,255,.3);white-space:nowrap}
+/* centre huds */
+#center{grid-area:mid;position:relative;min-width:0;min-height:0;pointer-events:none}
+.hud{position:absolute;background:rgba(5,9,14,.82);border:1px solid var(--line2);padding:6px 9px;font:10.5px var(--mono);color:var(--dim);pointer-events:auto;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+#legend{left:4px;bottom:4px;display:flex;flex-direction:column;gap:3px}
+#legend span{display:flex;align-items:center;gap:7px}
+#legend i{width:8px;height:8px;border-radius:50%;display:inline-block}
+#legend i.sq{border-radius:0;background:rgba(255,45,111,.22);border:1px solid var(--red)}
+#formula{right:4px;top:4px;max-width:52%;display:none} #formula div{color:var(--txt);white-space:pre-wrap;margin-top:3px}
+#evhud{left:4px;top:4px;max-width:46%} #evhud b{color:#fff;font-weight:600;display:block;font-size:11.5px;margin-top:2px}
+#btnGlobal{display:none;margin-top:6px}
+#maperr{position:absolute;left:190px;right:4px;bottom:46px;margin:0;display:none;background:rgba(24,6,12,.92);pointer-events:auto}
+#timeline{left:190px;right:4px;bottom:4px;display:flex;align-items:center;gap:10px;padding:5px 9px}
+#tlPlay{padding:2px 8px;min-width:54px}
+#tlTrack{position:relative;flex:1;height:18px;display:flex;align-items:center}
+#tlRange{width:100%;margin:0;height:3px;-webkit-appearance:none;appearance:none;background:#1a2836;outline:none;cursor:pointer}
+#tlRange::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:11px;height:15px;background:var(--cyan);box-shadow:0 0 10px var(--cyan);border:0;cursor:ew-resize}
+#tlTicks{position:absolute;left:5px;right:5px;top:0;bottom:0;pointer-events:none}
+#tlTicks i{position:absolute;top:1px;width:2px;height:6px;margin-left:-1px}
+#tlRead{font:11px var(--mono);font-variant-numeric:tabular-nums;color:#fff;min-width:150px;text-align:right;white-space:nowrap}
+#tip{position:fixed;z-index:20;pointer-events:none;display:none;background:rgba(5,9,14,.95);border:1px solid var(--cyan-dim);padding:6px 8px;font:11px var(--mono);color:var(--txt);max-width:300px;box-shadow:0 0 14px rgba(63,240,255,.18)}
+#tip b{color:#fff;display:block;font-weight:600} #tip i{font-style:normal;color:var(--dim)}
+/* impact */
+#impact{grid-area:impact}
+.expo{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line);flex:none}
+.expo div{padding:6px 8px;border-right:1px solid var(--line)} .expo div:last-child{border-right:0}
+.expo .num{display:block;font-size:22px;line-height:1.1;color:#fff}
+.expo .a .num{color:var(--red);text-shadow:0 0 12px rgba(255,45,111,.6)} .expo .r .num{color:var(--amber);text-shadow:0 0 10px rgba(255,182,39,.45)} .expo .c .num{color:var(--cyan)}
+.imp{padding:6px 10px;border-bottom:1px solid var(--line);cursor:pointer;border-left:2px solid transparent}
+.imp:hover{background:var(--panel2)} .imp.sel{background:rgba(255,255,255,.05)}
+.imp.alert{border-left-color:var(--red)} .imp.review{border-left-color:var(--amber)} .imp.clear{border-left-color:var(--cyan-dim)}
+.imp .r1{display:flex;gap:8px;align-items:baseline} .imp .sup{flex:1;min-width:0;font-size:12px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.imp .p{font:600 13px var(--mono);font-variant-numeric:tabular-nums}
+.imp.alert .p{color:var(--red)} .imp.review .p{color:var(--amber)} .imp.clear .p{color:var(--dim)}
+.imp .r2{display:flex;gap:8px;font:10.5px var(--mono);color:var(--dim);margin:2px 0 4px;flex-wrap:wrap}
+.imp .addr{font:10.5px var(--mono);color:#8ea0b5;margin:-2px 0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pbar{position:relative;height:5px;background:#111a26}
+.pbar i{position:absolute;left:0;top:0;bottom:0;background:var(--cyan-dim)}
+.imp.alert .pbar i{background:var(--red);box-shadow:0 0 8px rgba(255,45,111,.7)} .imp.review .pbar i{background:var(--amber)}
+.pbar u{position:absolute;top:-2px;bottom:-2px;width:1px;background:#8fa0b4}
+.imp .r3{display:flex;gap:8px;align-items:center;margin-top:5px;font:10.5px var(--mono);color:var(--dim)}
+.sev{display:flex;width:64px;height:6px;gap:1px;flex:none} .sev i{display:block;height:100%;min-width:1px}
+.sev i:nth-child(1){background:#2a3a4d}.sev i:nth-child(2){background:var(--cyan-dim)}.sev i:nth-child(3){background:var(--amber)}.sev i:nth-child(4){background:var(--red)}
+.sevl{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--txt)}
+.tag{border:1px solid var(--line2);padding:0 5px;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--txt);white-space:nowrap}
+.tag.activate_backup{border-color:var(--red);color:var(--red)} .tag.contact_supplier{border-color:var(--amber);color:var(--amber)}
+/* global exposure rows */
+.gx{border-bottom:1px solid var(--line2)}
+.gh{display:grid;grid-template-columns:auto auto 1fr;gap:3px 7px;padding:7px 10px 5px;cursor:pointer;align-items:start}
+.gh:hover{background:var(--panel2)}
+.tog{background:transparent;border:0;color:var(--dim);cursor:pointer;font:11px var(--mono);padding:0 2px;width:16px}
+.gh .t{font-size:12px;color:#fff;line-height:1.3}
+.gh .hl{grid-column:3;font:600 11px var(--mono);letter-spacing:.04em;color:var(--red)} .gh .hl.ok{color:var(--dim);font-weight:400}
+.gh .gm{grid-column:3;font:10.5px var(--mono);color:var(--dim)}
+.gi .imp{padding-left:22px} .gmore{padding:5px 10px 7px 34px;font:10.5px var(--mono);color:var(--cyan);cursor:pointer}
+/* bottom */
+#bottom{grid-area:bottom;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:6px;min-height:0;pointer-events:none}
+.stats{display:flex;gap:16px;padding:5px 10px;flex-wrap:wrap;border-bottom:1px solid var(--line);flex:none}
+.stat{display:flex;flex-direction:column} .stat .num{font-size:12.5px;color:#fff}
+.race{padding:5px 10px;display:grid;grid-template-columns:70px minmax(0,1fr) 150px;gap:4px 10px;align-items:center}
+.race .who{font:10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--txt)}
+.track{height:10px;background:#0e1622;position:relative;overflow:hidden}
+.track i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--cyan);box-shadow:0 0 10px var(--cyan);transition:width 0s linear}
+.track.cl i{background:var(--amber);box-shadow:0 0 10px var(--amber)}
+.track.wait i{width:30%!important;animation:indet 1.1s linear infinite;transition:none;opacity:.5}
+@keyframes indet{from{left:-30%}to{left:100%}}
+.race .val{font:11px var(--mono);font-variant-numeric:tabular-nums;color:var(--dim);text-align:right;white-space:nowrap}
+.race .off{font:10.5px var(--mono);color:var(--faint);letter-spacing:.1em;text-transform:uppercase}
+#raceOut{grid-column:1/-1;font:600 12.5px var(--mono);letter-spacing:.06em;color:var(--green);min-height:16px;text-shadow:0 0 10px rgba(61,255,162,.35)}
+#raceOut small{font-weight:400;color:var(--dim);font-size:10.5px;text-shadow:none}
+#briefText{padding:8px 12px;white-space:pre-wrap;font-size:12px;line-height:1.45;color:var(--txt)}
+#briefMeta{font:10px var(--mono);color:var(--dim);letter-spacing:.08em}
+/* drawer */
+#drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100vw);background:rgba(8,12,18,.96);border-left:1px solid var(--cyan-dim);z-index:30;transform:translateX(102%);transition:transform .22s ease;display:flex;flex-direction:column}
+#drawer.on{transform:none}
+.bm{padding:10px 12px;border-bottom:1px solid var(--line)}
+.bm h4{margin:0 0 4px;font:600 12.5px var(--sans);color:#fff}
+.bm .score{font:600 20px var(--mono);color:var(--cyan);font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 6px}
+.chip{font:10.5px var(--mono);border:1px solid var(--line2);padding:1px 6px;color:var(--dim)}
+.chip.hit{border-color:var(--green);color:var(--green)} .chip.miss{border-color:var(--red);color:var(--red)}
+.bm p{margin:4px 0 0;font-size:11.5px;color:var(--dim)}
+@media (max-width:900px){
+  html,body{height:auto;overflow:auto}
+  #mapwrap{position:relative;inset:auto;height:62vh}
+  #app{position:static;pointer-events:auto;grid-template-columns:minmax(0,1fr);grid-template-rows:none;grid-template-areas:"top" "tick" "mid" "impact" "feed" "bottom"}
+  #center{display:flex;flex-wrap:wrap;gap:6px} .hud{position:static;max-width:none!important} #maperr{position:static}
+  #impact .pb,#feed .pb{max-height:60vh} #bottom{grid-template-columns:minmax(0,1fr)} .ctrs{margin-left:0} .doc{border-left:0;padding-left:0}
+  .race{grid-template-columns:70px minmax(0,1fr)} .race .val{grid-column:1/-1;text-align:left} #scan span{top:12px}
+}
+</style>
+</head>
+<body>
+<div id="mapwrap">
+  <svg id="map"><defs>
+    <filter id="glowC" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="glowH" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="glowE" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs></svg>
+  <div class="scanlines"></div>
+  <div id="scan"><i></i><span id="scanText">DREX DECIDING…</span></div>
+</div>
+
+<div id="app">
+  <header id="top" class="panel">
+    <div class="brand"><span id="name">…</span><span id="tagline"></span></div>
+    <div class="doc">
+      <span class="cosel"><span class="lbl">Watching for</span><select id="companySel" aria-label="Company"></select><span id="fictag">Example</span></span>
+      <a id="doclink" target="_blank" rel="noopener"></a>
+    </div>
+    <div class="ctrs">
+      <div class="ctr"><span class="lbl">Suppliers</span><span class="num" id="cSup">–</span></div>
+      <div class="ctr"><span class="lbl">Sites</span><span class="num" id="cSites">–</span></div>
+      <div class="ctr"><span class="lbl">Events watched</span><span class="num" id="cEv">–</span></div>
+      <div class="ctr"><span class="lbl">Decisions</span><span class="num" id="cDec">0</span></div>
+      <div class="ctr"><span class="lbl">Drex time</span><span class="num" id="cMs">0 ms</span></div>
+      <div class="ctr"><span class="lbl">Drex cost</span><span class="num" id="cCost">$0</span></div>
+    </div>
+    <button class="btn" id="btnTrack">06 · Track record</button>
+    <div id="clockwrap"><span class="lbl">UTC</span><span class="num" id="clock">--:--:--</span></div>
+  </header>
+
+  <div id="ticker" class="panel"><span class="dot"></span><span class="lbl">Live watch</span><span id="tickText">Connecting…</span></div>
+
+  <section id="feed" class="panel">
+    <div class="ph"><b>01</b> · Event feed <span class="sp"></span><span id="feedAge"></span></div>
+    <div class="tabs"><button class="tab on" data-tab="live">Live</button><button class="tab" data-tab="scenarios">Past incidents</button></div>
+    <div class="pb" id="feedList"><div class="empty">Loading events…</div></div>
+  </section>
+
+  <div id="center">
+    <div class="hud" id="evhud"><span class="lbl" id="evLbl">Global watch</span><b id="evTitle">All live events</b><span id="evSub"></span><br><button class="btn" id="btnGlobal">◂ Global view</button></div>
+    <div class="hud" id="formula"><span class="lbl">How intensity is estimated</span><div id="formulaLines"></div></div>
+    <div class="hud" id="legend">
+      <span><i style="background:var(--cyan);box-shadow:0 0 6px var(--cyan)"></i>Supplier site</span>
+      <span><i style="background:#fff;box-shadow:0 0 8px var(--red)"></i>On alert</span>
+      <span><i style="background:var(--amber);box-shadow:0 0 6px var(--amber)"></i>Needs review</span>
+      <span><i class="sq"></i>Area an event can reach</span>
+    </div>
+    <div class="hud" id="timeline"><button class="btn" id="tlPlay">▶ Play</button><span class="lbl">Timeline</span>
+      <div id="tlTrack"><div id="tlTicks"></div><input type="range" id="tlRange" min="0" max="1000" value="1000" aria-label="Timeline"></div>
+      <span id="tlRead">NOW</span></div>
+    <div class="err" id="maperr"></div>
+  </div>
+
+  <section id="impact" class="panel">
+    <div class="ph"><b>03</b> · <span id="impTitle">Global exposure</span> <span class="sp"></span><span id="impMeta"></span></div>
+    <div class="expo">
+      <div class="a"><span class="lbl" id="xl1">Sites on alert</span><span class="num" id="x1">–</span></div>
+      <div class="r"><span class="lbl" id="xl2">In review</span><span class="num" id="x2">–</span></div>
+      <div class="a"><span class="lbl" id="xl3">Suppliers on alert</span><span class="num" id="x3">–</span></div>
+      <div class="c"><span class="lbl" id="xl4">Events watched</span><span class="num" id="x4">–</span></div>
+    </div>
+    <div class="pb" id="impList"><div class="empty">Loading the global picture…</div></div>
+  </section>
+
+  <div id="bottom">
+    <section id="engine" class="panel">
+      <div class="ph"><b>04</b> · Decision engine <span class="sp"></span><button class="btn" id="btnRace" disabled>Race vs Claude</button></div>
+      <div class="stats" id="stats"><div class="empty" style="padding:0">Waiting for the first pass…</div></div>
+      <div class="pb">
+        <div class="race">
+          <span class="who">Drex</span><div class="track" id="trDrex"><i></i></div><span class="val" id="vDrex">–</span>
+          <span class="who">Claude</span><div id="claudeCell"><div class="track cl" id="trClaude"><i></i></div></div><span class="val" id="vClaude">–</span>
+          <div id="raceOut"></div>
+        </div>
+        <div class="err" id="raceErr" style="display:none"></div>
+      </div>
+    </section>
+    <section id="brief" class="panel">
+      <div class="ph"><b>05</b> · Incident brief <span class="sp"></span><span id="briefMeta"></span><button class="btn" id="btnBrief" disabled>Write brief</button></div>
+      <div class="pb"><div id="briefText" class="empty">Select an event, then write the brief.</div><div class="err" id="briefErr" style="display:none"></div></div>
+    </section>
+  </div>
+</div>
+
+<aside id="drawer">
+  <div class="ph"><b>06</b> · Track record <span class="sp"></span><button class="btn" id="btnClose">Close</button></div>
+  <div class="pb" id="bmBody"><div class="empty">Loading…</div></div>
+</aside>
+<div id="tip"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script>
+"use strict";
+// ---------- helpers
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fInt = (n) => (n == null || isNaN(n) ? "–" : Math.round(n).toLocaleString("en-US"));
+const fPct = (p) => (p == null || isNaN(p) ? "–" : Math.round(p * 100) + "%");
+const fMs = (ms) => (ms == null || isNaN(ms) ? "–" : ms >= 1000 ? (ms / 1000).toFixed(ms >= 10000 ? 1 : 2) + " s" : Math.round(ms) + " ms");
+const fUsd = (v) => {
+  if (v == null || isNaN(v)) return "–";
+  if (v === 0) return "$0";
+  if (v >= 1) return "$" + v.toFixed(2);
+  if (v >= 0.01) return "$" + v.toFixed(3);
+  const d = Math.min(8, Math.max(4, 1 - Math.floor(Math.log10(v))));   // keep two significant digits of a small cost
+  return "$" + v.toFixed(d);
+};
+const fX = (n) => (n == null || isNaN(n) ? "–" : (n >= 10 ? fInt(n) : n.toFixed(1)) + "×");
+const fKm = (n) => (n == null || isNaN(n) ? "–" : fInt(n) + " km");
+const plural = (n, w) => `${fInt(n)} ${w}${n === 1 ? "" : "s"}`;
+const ago = (t) => {
+  if (!t) return "";
+  const s = (Date.now() - t) / 1000;
+  if (s < 0) return "just now";
+  if (s < 90) return Math.round(s) + "s ago";
+  if (s < 5400) return Math.round(s / 60) + "m ago";
+  if (s < 172800) return Math.round(s / 3600) + "h ago";
+  if (s < 86400 * 60) return Math.round(s / 86400) + "d ago";
+  return new Date(t).toISOString().slice(0, 10);
+};
+const KIND = { earthquake: "EQ", cyclone: "CYC", flood: "FLD", volcano: "VOL", wildfire: "FIRE", news: "NEWS", strike: "STK", conflict: "CON", port: "PRT", policy: "POL" };
+const KCOL = { earthquake: "#ff2d6f", cyclone: "#b47cff", flood: "#4d9bff", volcano: "#ff7a2d", wildfire: "#ff7a2d", strike: "#ffb627", conflict: "#ff3b3b", port: "#3ff0ff", policy: "#3dffa2", news: "#3ff0ff" };
+const kcol = (k) => KCOL[k] || "#ff2d6f";
+const kindTag = (k) => `<span class="kind k-${esc(k)}">${esc(KIND[k] || String(k || "EVT").slice(0, 4))}</span>`;
+const S = { company: null, state: null, events: { live: [], scenarios: [] }, tab: "live", mode: "global", selId: null, assess: null, selSite: null,
+            overview: null, ovErr: "", open: new Set(), openInit: false, tl: 1, playing: false, busy: false, token: 0, coTok: 0,
+            session: { decisions: 0, ms: 0, cost: 0 }, impactBySite: new Map() };
+const siteById = new Map();
+const withCo = (p) => (S.company ? p + (p.includes("?") ? "&" : "?") + "company=" + encodeURIComponent(S.company) : p);
+async function api(path, body) {
+  let res;
+  try {
+    res = await fetch(body === undefined ? withCo(path) : path, body === undefined ? {} :
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(S.company ? { ...body, company: S.company } : body) });
+  } catch (e) { throw new Error("Network error: server not reachable"); }
+  let data = null;
+  try { data = await res.json(); } catch (e) { /* not JSON */ }
+  if (!res.ok || (data && data.error)) throw new Error((data && data.error) || "Server error " + res.status);
+  if (data == null) throw new Error("Server returned no data");
+  return data;
+}
+function showErr(el, msg) { el.textContent = msg || ""; el.style.display = msg ? "block" : "none"; }
+
+// ---------- map (land, reach areas and links are zoomed; sites and event markers are drawn in screen pixels so the glow stays crisp)
+const svg = d3.select("#map");
+const gZoom = svg.append("g");
+const gBase = gZoom.append("g"), gReach = gZoom.append("g"), gLinks = gZoom.append("g");
+const gIdle = svg.append("g").attr("filter", "url(#glowC)"), gRev = svg.append("g").attr("filter", "url(#glowC)");
+const gHalo = svg.append("g"), gAl = svg.append("g").attr("filter", "url(#glowH)");
+const gOver = svg.append("g");
+const projection = d3.geoNaturalEarth1();
+const path = d3.geoPath(projection);
+let world = null, zoomT = d3.zoomIdentity, mapW = 0, mapH = 0, PAD = { l: 0, r: 0, t: 0, b: 0 };
+const zoom = d3.zoom().scaleExtent([1, 60]).on("zoom", (e) => { zoomT = e.transform; gZoom.attr("transform", zoomT); placeSites(); placeOverlay(); });
+svg.call(zoom).on("dblclick.zoom", null);
+const wide = () => window.innerWidth > 900;
+const tierOf = (d) => { const im = S.impactBySite.get(d.id); return im ? im.tier : "idle"; };
+const baseR = { idle: 2.1, clear: 2.3, review: 4, alert: 4.6 };
+
+function layoutMap() {
+  const box = $("mapwrap").getBoundingClientRect();
+  mapW = Math.max(200, box.width); mapH = Math.max(160, box.height);
+  PAD = wide() ? { l: 312, r: 362, t: 92, b: 162 } : { l: 8, r: 8, t: 8, b: 8 };     // the part of the map not covered by panels
+  svg.attr("viewBox", `0 0 ${mapW} ${mapH}`);
+  projection.fitExtent([[PAD.l + 6, PAD.t + 6], [mapW - PAD.r - 6, mapH - PAD.b - 6]], { type: "Sphere" });
+  zoom.translateExtent([[-mapW, -mapH], [mapW * 2, mapH * 2]]);
+  gBase.selectAll("*").remove();
+  gBase.append("path").attr("class", "sphere").attr("d", path({ type: "Sphere" }));
+  gBase.append("path").attr("class", "grat").attr("d", path(d3.geoGraticule().step([15, 15])()));
+  if (world) gBase.append("g").selectAll("path").data(world).join("path").attr("class", "land").attr("d", path);
+  drawSites(); drawEvents(false);
+}
+// Sites that share one coordinate are fanned out in a small spiral so each stays visible and clickable.
+let siteXY = new Map();
+const sitePos = (d) => siteXY.get(d.id) || projection([d.lon, d.lat]);
+function spreadSites(sites) {
+  siteXY = new Map(); const groups = new Map();
+  sites.forEach((s) => { const k = s.lat.toFixed(2) + "," + s.lon.toFixed(2); (groups.get(k) || groups.set(k, []).get(k)).push(s); });
+  groups.forEach((g) => g.forEach((s, i) => {
+    const p = projection([s.lon, s.lat]), r = 0.42 * Math.sqrt(i), a = i * 2.39996;
+    siteXY.set(s.id, [p[0] + r * Math.cos(a), p[1] + r * Math.sin(a)]);
+  }));
+}
+function drawSites() {
+  const sites = (S.state ? S.state.sites : []).filter((s) => s.lat != null && s.lon != null && projection([s.lon, s.lat]));
+  spreadSites(sites);
+  const by = { idle: [], clear: [], review: [], alert: [] };
+  sites.forEach((s) => by[tierOf(s)].push(s));
+  const join = (g, data, cls) => g.selectAll("circle." + cls.split(" ")[0]).data(data, (d) => d.id).join("circle").attr("class", (d) => cls + " " + tierOf(d))
+    .on("mouseenter", (e, d) => showTip(e, d)).on("mousemove", moveTip).on("mouseleave", hideTip).on("click", (e, d) => selectSite(d.id, false));
+  join(gIdle, by.idle.concat(by.clear), "site"); join(gRev, by.review, "site"); join(gAl, by.alert, "site");
+  gHalo.selectAll("circle").data(by.alert, (d) => d.id).join("circle").attr("class", "halo").attr("r", 13);
+  placeSites();
+}
+function placeSites() {
+  const f = Math.min(2.4, Math.pow(zoomT.k, 0.3));
+  [gIdle, gRev, gAl].forEach((g) => g.selectAll("circle")
+    .attr("cx", (d) => zoomT.applyX(sitePos(d)[0])).attr("cy", (d) => zoomT.applyY(sitePos(d)[1])).attr("r", (d) => baseR[tierOf(d)] * f));
+  gHalo.selectAll("circle").attr("cx", (d) => zoomT.applyX(sitePos(d)[0])).attr("cy", (d) => zoomT.applyY(sitePos(d)[1]));
+}
+const xy = (lon, lat) => { const p = projection([lon, lat]); return p ? zoomT.apply(p) : null; };
+const circleGeo = (ev, km) => d3.geoCircle().center([ev.lon, ev.lat]).radius(Math.max(20, km) / 111.32).precision(2)();
+// what is on the map right now: every overview event (global watch) or the one focused event
+// Timeline: at the far right (NOW) every event the server is watching is shown. Dragged back to a time T it shows
+// events that had started by T and within the TL_WINDOW_DAYS before it. Set TL_NOW_ALL to false to apply the window at NOW too.
+const TL_WINDOW_DAYS = 30, TL_NOW_ALL = true;
+function tlBounds() {
+  const ts = ((S.overview && S.overview.events) || []).map((o) => o.event && o.event.time).filter((t) => t != null);
+  const t1 = Date.now(), t0 = ts.length ? Math.min(...ts) - 3600e3 : t1 - 7 * 86400e3;
+  return [Math.min(t0, t1 - 3600e3), t1];
+}
+const tlTime = () => { const [a, b] = tlBounds(); return a + (b - a) * S.tl; };
+function visibleOverview() {
+  const evs = (S.overview && S.overview.events) || [];
+  if (S.tl >= 0.999 && TL_NOW_ALL) return evs;
+  const T = tlTime(), w = TL_WINDOW_DAYS * 86400e3;
+  return evs.filter((o) => o.event && o.event.time != null && o.event.time <= T && o.event.time >= T - w);
+}
+function shownEvents() {
+  if (S.mode === "focus") { const a = S.assess; return a && a.event ? [{ event: a.event, reach_km: a.reach_km, exposure: a.exposure || {}, impacts: a.impacts || [] }] : []; }
+  return visibleOverview().filter((o) => o.event && o.event.lat != null && o.event.lon != null);
+}
+function drawEvents(fly) {
+  gReach.selectAll("*").remove(); gLinks.selectAll("*").remove();
+  const list = shownEvents().filter((o) => o.event.lat != null && o.event.lon != null);
+  list.forEach((o) => {
+    if (!(o.reach_km > 0)) return;
+    const d = path(circleGeo(o.event, o.reach_km));
+    gReach.append("path").attr("class", "reachglow").attr("d", d).style("stroke", kcol(o.event.kind));
+    gReach.append("path").attr("class", "reach" + (S.mode === "focus" ? " focus" : "")).attr("d", d).style("stroke", kcol(o.event.kind))
+      .on("click", () => { if (S.mode === "global" && !S.busy) assess(o.event.id); });
+    (o.impacts || []).filter((i) => i.tier === "alert" && i.lat != null && i.lon != null).forEach((i) => {
+      const ld = path({ type: "LineString", coordinates: [[o.event.lon, o.event.lat], [i.lon, i.lat]] });
+      gLinks.append("path").attr("class", "linkglow").attr("d", ld); gLinks.append("path").attr("class", "link").attr("d", ld);
+    });
+  });
+  if (fly) {
+    const ev = S.mode === "focus" && S.assess ? S.assess.event : null;
+    if (ev && ev.lat != null && ev.lon != null) flyTo(ev.lon, ev.lat, S.assess.reach_km);
+    else svg.transition().duration(800).call(zoom.transform, d3.zoomIdentity);
+  }
+  placeOverlay();
+}
+function flyTo(lon, lat, reachKm, keepScale) {
+  const p = projection([lon, lat]); if (!p) return;
+  const vw = mapW - PAD.l - PAD.r, vh = mapH - PAD.t - PAD.b, cx = PAD.l + vw / 2, cy = PAD.t + vh / 2;
+  let k = zoomT.k;
+  if (!keepScale) {
+    const b = path.bounds(d3.geoCircle().center([lon, lat]).radius(Math.max(150, reachKm || 600) / 111.32)());
+    const span = Math.max(b[1][0] - b[0][0], b[1][1] - b[0][1], 1);
+    k = Math.max(1.4, Math.min(30, (Math.min(vw, vh) * 0.8) / span));
+  } else k = Math.max(k, 6);
+  svg.transition().duration(900).call(zoom.transform, d3.zoomIdentity.translate(cx, cy).scale(k).translate(-p[0], -p[1]));
+}
+function placeOverlay() {
+  gOver.selectAll("*").remove();
+  shownEvents().forEach((o, n) => {
+    const ev = o.event, p = xy(ev.lon, ev.lat); if (!p) return;
+    const c = kcol(ev.kind), x = o.exposure || {};
+    const g = gOver.append("g").attr("class", "evm").attr("transform", `translate(${p[0]},${p[1]})`).attr("filter", "url(#glowE)")
+      .on("click", () => { if (S.mode === "global" && !S.busy) assess(ev.id); });
+    ["", " r2", " r3"].forEach((cl) => g.append("circle").attr("class", "ring" + cl).attr("r", 44).style("stroke", c));
+    g.append("circle").attr("r", 4.2).attr("fill", c);
+    g.append("path").attr("d", "M-10,0H-5M5,0H10M0,-10V-5M0,5V10").attr("stroke", "#fff").attr("stroke-width", 1);
+    const title = String(ev.title || "").replace(/^Tropical Cyclone /i, "").toUpperCase();
+    const hit = (x.alert || 0) + (x.review || 0) > 0 || S.mode === "focus";
+    const txt = hit ? `${KIND[ev.kind] || "EVT"} ${title.length > 30 ? title.slice(0, 29) + "…" : title} · ${fInt(x.alert || 0)} ALERT · ${fInt(x.review || 0)} REVIEW`
+                    : `${KIND[ev.kind] || "EVT"} ${title.length > 16 ? title.slice(0, 15) + "…" : title} · CLEAR`;
+    const w = txt.length * 6.45 + 12, ly = -22 - (n % 3) * 17;
+    const lab = gOver.append("g").attr("class", "evm evlab").attr("transform", `translate(${p[0] + 12},${p[1] + ly})`)
+      .on("click", () => { if (S.mode === "global" && !S.busy) assess(ev.id); });
+    lab.append("rect").attr("width", w).attr("height", 15).style("stroke", (x.alert || 0) > 0 ? "#ff2d6f" : c);
+    lab.append("text").attr("x", 6).attr("y", 11).text(txt).style("fill", (x.alert || 0) > 0 ? "#ff8fb2" : "#dfe8f2");
+  });
+  const s = S.selSite != null ? siteById.get(S.selSite) : null;
+  if (s && s.lat != null) { const p = zoomT.apply(sitePos(s)); if (p) gOver.append("circle").attr("class", "selring").attr("cx", p[0]).attr("cy", p[1]).attr("r", 10).style("pointer-events", "none"); }
+}
+// tooltip
+function showTip(e, d) {
+  const im = S.impactBySite.get(d.id);
+  $("tip").innerHTML = `<b>${esc(d.supplier)}</b>${d.address ? esc(d.address) + "<br>" : ""}<i>${esc([d.region, d.country].filter(Boolean).join(", "))}</i>` +
+    (im ? `<br>${im._ev ? esc(im._ev) + "<br>" : ""}${fKm(im.distance_km)} from event · P(disrupted) ${fPct(im.p_disrupted)}` : `<br><i>p. ${esc(d.page ?? "–")} of the supplier list</i>`);
+  $("tip").style.display = "block"; moveTip(e);
+}
+function moveTip(e) { const t = $("tip"); t.style.left = Math.min(window.innerWidth - 310, e.clientX + 14) + "px"; t.style.top = (e.clientY + 14) + "px"; }
+function hideTip() { $("tip").style.display = "none"; }
+
+// ---------- top bar
+function renderTop() {
+  const st = S.state; if (!st) return;
+  document.title = st.name || "";
+  $("name").textContent = st.name || ""; $("tagline").textContent = st.tagline || "";
+  const cos = st.companies && st.companies.length ? st.companies : [{ key: st.company_key || "", name: st.company || "–", fictional: false }];
+  const cur = st.company_key != null ? st.company_key : cos[0].key;
+  $("companySel").innerHTML = cos.map((c) => `<option value="${esc(c.key)}"${c.key === cur ? " selected" : ""}>${esc(c.name)}${c.fictional ? " · EXAMPLE" : ""}</option>`).join("");
+  $("companySel").disabled = cos.length < 2;
+  const me = cos.find((c) => c.key === cur); $("fictag").style.display = me && me.fictional ? "inline-block" : "none";
+  const doc = st.document || {};
+  $("doclink").textContent = (doc.title || "Source document") + (doc.pages ? ` · ${fInt(doc.pages)} pages` : "");
+  if (doc.url) $("doclink").href = doc.url; else $("doclink").removeAttribute("href");
+  $("cSup").textContent = fInt(st.counts && st.counts.suppliers); $("cSites").textContent = fInt(st.counts && st.counts.sites);
+}
+function renderCounters() {
+  const t = (S.overview && S.overview.totals) || {};
+  $("cEv").textContent = fInt(S.events.live.length);
+  $("cDec").textContent = fInt(S.session.decisions + (t.decisions || 0)); $("cMs").textContent = fMs(S.session.ms + (t.ms || 0)); $("cCost").textContent = fUsd(S.session.cost + (t.cost_usd || 0));
+}
+setInterval(() => { $("clock").textContent = new Date().toISOString().slice(11, 19); }, 1000);
+$("companySel").addEventListener("change", (e) => switchCompany(e.target.value));
+
+// ---------- feed
+function renderFeed() {
+  document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("on", t.dataset.tab === S.tab));
+  const list = S.events[S.tab] || [];
+  if (!list.length) { $("feedList").innerHTML = `<div class="empty">${S.tab === "live" ? "No live events reach this supply chain right now." : "No past incidents loaded."}</div>`; return; }
+  $("feedList").innerHTML = list.map((ev) => {
+    const meta = [];
+    if (ev.magnitude != null) meta.push("M " + Number(ev.magnitude).toFixed(1));
+    if (ev.depth_km != null) meta.push(fInt(ev.depth_km) + " km deep");
+    if (ev.alert) meta.push(`<span class="al-${esc(String(ev.alert).toLowerCase())}">${esc(String(ev.alert).toUpperCase())}</span>`);
+    meta.push(esc(ago(ev.time)));
+    if (ev.source) meta.push(esc(ev.source));
+    return `<div class="ev${ev.id === S.selId ? " sel" : ""}" data-id="${esc(ev.id)}">
+      ${kindTag(ev.kind)}<span class="t">${esc(ev.title)}</span>
+      ${ev.summary ? `<span class="sum">${esc(ev.summary)}</span>` : ""}
+      <span class="m">${meta.join("<span>·</span>")}</span>${ev.note ? `<span class="note">${esc(ev.note)}</span>` : ""}</div>`;
+  }).join("");
+}
+$("feedList").addEventListener("click", (e) => { const row = e.target.closest(".ev"); if (row && !S.busy) assess(row.dataset.id); });
+document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => { S.tab = t.dataset.tab; renderFeed(); }));
+async function loadEvents(first) {
+  const co = S.coTok;
+  try {
+    const ev = await api("/api/events");
+    if (co !== S.coTok) return;
+    S.events = { live: ev.live || [], scenarios: ev.scenarios || [] };
+    $("feedAge").textContent = "updated " + new Date().toISOString().slice(11, 16) + "Z";
+    renderFeed(); renderCounters();
+  } catch (e) {
+    if (co !== S.coTok) return;
+    if (first) $("feedList").innerHTML = `<div class="err">${esc(e.message)}</div>`;
+    else $("feedAge").textContent = "refresh failed";
+  }
+}
+const findEvent = (id) => S.events.live.find((e) => e.id === id) || S.events.scenarios.find((e) => e.id === id) ||
+  (((S.overview && S.overview.events) || []).find((o) => o.event && o.event.id === id) || {}).event;
+
+// ---------- global watch
+let ovTimer = null, tickTimer = null, tickN = 0;
+function globalImpactMap() {
+  const m = new Map(), rank = { alert: 2, review: 1, clear: 0 };
+  visibleOverview().forEach((o) => (o.impacts || []).forEach((i) => {
+    const old = m.get(i.site_id);
+    if (!old || rank[i.tier] > rank[old.tier] || (rank[i.tier] === rank[old.tier] && i.p_disrupted > old.p_disrupted)) m.set(i.site_id, { ...i, _ev: o.event.title });
+  }));
+  return m;
+}
+async function pollOverview() {
+  clearTimeout(ovTimer); const co = S.coTok; let next = 30000;
+  try {
+    const o = await api("/api/overview");
+    if (co !== S.coTok) return;
+    S.overview = o; S.ovErr = "";
+    if (o.warming) next = 4000;
+    if (!S.openInit && (o.events || []).length) { o.events.slice(0, 4).forEach((x) => { if ((x.impacts || []).length) S.open.add(x.event.id); }); S.openInit = true; }
+  } catch (e) {
+    if (co !== S.coTok) return;
+    S.ovErr = e.message; next = 8000;
+  }
+  renderCounters(); renderTicker(true);
+  if (S.mode === "global") { S.impactBySite = globalImpactMap(); drawSites(); drawEvents(false); renderGlobal(); renderEngine(); }
+  ovTimer = setTimeout(pollOverview, next);
+}
+function tickItems() {
+  const o = S.overview; if (!o) return [];
+  return (o.events || []).filter((x) => (x.exposure && x.exposure.suppliers_alert > 0) || (x.exposure && x.exposure.alert > 0)).map((x) => {
+    const names = [...new Set((x.impacts || []).filter((i) => i.tier === "alert").map((i) => i.supplier))];
+    const n = (x.exposure.suppliers_alert != null ? x.exposure.suppliers_alert : names.length);
+    return `<b>${esc(String(x.event.title).toUpperCase())}</b> → ${plural(n, "supplier")} on alert${names.length ? ": " + esc(names.slice(0, 4).join(", ")) + (names.length > 4 ? ` <i>+${names.length - 4} more</i>` : "") : ""}`;
+  });
+}
+function renderTicker(reset) {
+  const o = S.overview, el = $("tickText"), box = $("ticker");
+  if (reset) tickN = 0;
+  if (S.ovErr) { box.classList.remove("hot"); el.innerHTML = `<i>Global watch unavailable: ${esc(S.ovErr)}</i>`; return; }
+  if (!o) { el.textContent = "Connecting…"; return; }
+  if (o.warming) { box.classList.remove("hot"); el.textContent = "DREX IS ASSESSING LIVE EVENTS…"; return; }
+  const items = tickItems(); box.classList.toggle("hot", items.length > 0);
+  if (!items.length) { el.innerHTML = `<i>${plural((o.totals && o.totals.events) || (o.events || []).length, "live event")} in reach · no supplier on alert</i>`; return; }
+  el.innerHTML = items[tickN % items.length] + (items.length > 1 ? ` <i>(${(tickN % items.length) + 1}/${items.length})</i>` : "");
+}
+tickTimer = setInterval(() => { tickN++; renderTicker(false); }, 4500);
+
+function impRow(i, th) {
+  const sv = i.severity || {}, ac = i.action || {}, probs = sv.probabilities || [], legend = sv.legend || [];
+  const sevTitle = legend.map((l, n) => `${l}: ${fPct(probs[n])}`).join("\n");
+  const acTitle = Object.entries(ac.probabilities || {}).map(([k, v]) => `${k.replace(/_/g, " ")}: ${fPct(v)}`).join("\n");
+  const s = siteById.get(i.site_id) || {}, addr = i.address || s.address;
+  return `<div class="imp ${esc(i.tier)}${i.site_id === S.selSite ? " sel" : ""}" data-site="${esc(i.site_id)}">
+    <div class="r1"><span class="sup" title="${esc(i.supplier)}">${esc(i.supplier)}</span><span class="p">${fPct(i.p_disrupted)}</span></div>
+    <div class="r2"><span>${esc([i.region, i.country].filter(Boolean).join(", "))}</span><span>${fKm(i.distance_km)}</span>${i.intensity != null ? `<span>MMI ${Number(i.intensity).toFixed(1)}</span>` : ""}${i.page != null ? `<span>p. ${esc(i.page)}</span>` : ""}</div>
+    ${addr ? `<div class="addr" title="${esc(addr)}">${esc(addr)}</div>` : ""}
+    <div class="pbar" title="P(disrupted) ${fPct(i.p_disrupted)}"><i style="width:${Math.max(0, Math.min(100, (i.p_disrupted || 0) * 100))}%"></i><u style="left:${th.review * 100}%"></u><u style="left:${th.alert * 100}%"></u></div>
+    <div class="r3"><span class="sev" title="${esc(sevTitle)}">${probs.map((p) => `<i style="flex:${Math.max(0.001, p)}"></i>`).join("")}</span>
+      <span class="sevl">${esc(sv.label || "–")}</span>${ac.choice ? `<span class="tag ${esc(ac.choice)}" title="${esc(acTitle)}">${esc(String(ac.choice).replace(/_/g, " "))}</span>` : ""}</div></div>`;
+}
+const thresholds = () => (S.state && S.state.thresholds) || { alert: 0.6, review: 0.3 };
+function setExpo(labels, vals) { labels.forEach((l, n) => { $("xl" + (n + 1)).textContent = l; $("x" + (n + 1)).textContent = vals[n]; }); }
+function renderGlobal() {
+  $("impTitle").textContent = "Global exposure";
+  $("evLbl").textContent = "Global watch"; $("evTitle").textContent = "All live events"; $("btnGlobal").style.display = "none"; $("formula").style.display = "none";
+  const o = S.overview, evs = visibleOverview(), atNow = S.tl >= 0.999 && TL_NOW_ALL;
+  const sum = (k) => evs.reduce((n, x) => n + ((x.exposure && x.exposure[k]) || 0), 0);
+  const t = atNow && o && o.totals ? o.totals : { alert: sum("alert"), review: sum("review"), suppliers_alert: sum("suppliers_alert"), events: evs.length };
+  setExpo(["Sites on alert", "In review", "Suppliers on alert", "Events watched"], [fInt(t.alert), fInt(t.review), fInt(t.suppliers_alert), fInt(t.events != null ? t.events : evs.length)]);
+  $("timeline").style.display = ""; renderTimeline();
+  $("evSub").textContent = o && !o.warming ? `${plural(evs.length, "event")} in reach · updated ${ago(o.updated)}` : "";
+  $("impMeta").textContent = o && o.updated ? "live · " + new Date(o.updated).toISOString().slice(11, 16) + "Z" : "";
+  if (S.ovErr && !o) { $("impList").innerHTML = `<div class="err">Global watch unavailable: ${esc(S.ovErr)}</div>`; return; }
+  if (!o || o.warming) { $("impList").innerHTML = `<div class="empty">DREX IS ASSESSING LIVE EVENTS…</div>`; return; }
+  if (!evs.length) { $("impList").innerHTML = `<div class="empty">${atNow ? "No live event reaches a supplier site right now. Open PAST INCIDENTS to replay a real one." : "No event was active in the 7 days before this point on the timeline."}</div>`; return; }
+  const th = thresholds();
+  $("impList").innerHTML = evs.map((x) => {
+    const ev = x.event, ex = x.exposure || {}, imps = x.impacts || [], open = S.open.has(ev.id), hot = (ex.alert || 0) > 0;
+    return `<div class="gx" data-id="${esc(ev.id)}">
+      <div class="gh"><button class="tog" title="Show or hide suppliers">${open ? "▾" : "▸"}</button>${kindTag(ev.kind)}<span class="t">${esc(ev.title)}</span>
+        <span class="hl${hot ? "" : " ok"}">${esc(x.headline || `${fInt(ex.alert || 0)} on alert`)}</span>
+        <span class="gm">${fInt(ex.alert || 0)} alert · ${fInt(ex.review || 0)} review · ${fInt(ex.clear || 0)} clear · reach ${fKm(x.reach_km)} · ${esc(ago(ev.time))}</span></div>
+      ${open ? `<div class="gi">${imps.slice(0, 5).map((i) => impRow(i, th)).join("") || '<div class="empty" style="padding-left:34px">Every site in reach is clear.</div>'}
+        ${imps.length > 5 ? `<div class="gmore">+ ${fInt(imps.length - 5)} more · open this event</div>` : ""}</div>` : ""}</div>`;
+  }).join("");
+}
+function renderTimeline() {
+  const [a, b] = tlBounds(), evs = (S.overview && S.overview.events) || [];
+  $("tlTicks").innerHTML = evs.filter((o) => o.event && o.event.time != null).map((o) =>
+    `<i style="left:${(Math.max(0, Math.min(1, (o.event.time - a) / (b - a))) * 100).toFixed(2)}%;background:${kcol(o.event.kind)};box-shadow:0 0 5px ${kcol(o.event.kind)}" title="${esc(o.event.title)}"></i>`).join("");
+  $("tlRead").textContent = S.tl >= 0.999 ? "NOW" : new Date(tlTime()).toISOString().slice(0, 16).replace("T", " ") + " UTC";
+  $("tlRange").value = Math.round(S.tl * 1000); $("tlPlay").textContent = S.playing ? "❚❚ Pause" : "▶ Play";
+}
+function refreshGlobal() { if (S.mode !== "global") return; S.impactBySite = globalImpactMap(); drawSites(); drawEvents(false); renderGlobal(); }
+let tlTimer = null;
+function tlStop() { S.playing = false; clearInterval(tlTimer); tlTimer = null; }
+$("tlRange").addEventListener("input", (e) => { tlStop(); S.tl = Number(e.target.value) / 1000; refreshGlobal(); });
+$("tlPlay").addEventListener("click", () => {
+  if (S.playing) { tlStop(); renderTimeline(); return; }
+  if (S.tl >= 0.999) S.tl = 0;
+  S.playing = true;
+  tlTimer = setInterval(() => { S.tl = Math.min(1, S.tl + 0.2 / 15); if (S.tl >= 1) tlStop(); refreshGlobal(); }, 200);     // full sweep in about 15 s
+  refreshGlobal();
+});
+function goGlobal() {
+  S.token++; S.mode = "global"; S.selId = null; S.assess = null; S.selSite = null; setBusy(false);
+  S.impactBySite = globalImpactMap(); renderFeed(); resetRace(); resetBrief(); showErr($("maperr"), "");
+  drawSites(); drawEvents(true); renderGlobal(); renderEngine();
+}
+$("btnGlobal").addEventListener("click", goGlobal);
+
+// ---------- assess (focus one event)
+function setBusy(on) {
+  S.busy = on; $("feed").classList.toggle("busy", on); $("scan").classList.toggle("on", on);
+  $("btnRace").disabled = on || !S.assess; $("btnBrief").disabled = on || !S.assess;
+}
+async function assess(id) {
+  const ev = findEvent(id); const token = ++S.token;
+  S.mode = "focus"; S.selId = id; S.selSite = null; renderFeed(); resetRace(); resetBrief(); showErr($("maperr"), "");
+  $("impTitle").textContent = "Impact"; $("evLbl").textContent = "Selected event"; $("btnGlobal").style.display = "inline-block";
+  tlStop(); $("timeline").style.display = "none";
+  $("evTitle").textContent = ev ? ev.title : id; $("evSub").textContent = ev ? [KIND[ev.kind] || ev.kind, ev.source, ago(ev.time)].filter(Boolean).join(" · ") : "";
+  $("impMeta").textContent = "assessing…"; $("scanText").textContent = "DREX DECIDING…"; setBusy(true);
+  try {
+    const a = await api("/api/assess", { event_id: id });
+    if (token !== S.token) return;
+    S.assess = a; S.impactBySite = new Map((a.impacts || []).map((i) => [i.site_id, i]));
+    const d = a.drex || {};
+    S.session.decisions += d.decisions || 0; S.session.ms += d.ms || 0; S.session.cost += d.cost_usd || 0;
+    renderCounters(); renderImpact(); renderEngine(); drawSites(); drawEvents(true);
+    const f = a.formula || [];
+    $("formula").style.display = f.length ? "block" : "none"; $("formulaLines").innerHTML = f.map((l) => `<div>${esc(l)}</div>`).join("");
+    $("evSub").textContent = `${fInt(a.candidates)} sites within ${fKm(a.reach_km)}`;
+    if (a.event && (a.event.lat == null || a.event.lon == null)) showErr($("maperr"), "This event has no map location; impacts are listed on the right.");
+    setBusy(false); runRace(false);
+  } catch (e) {
+    if (token !== S.token) return;
+    S.assess = null; S.impactBySite = new Map(); drawSites(); drawEvents(false);
+    $("impList").innerHTML = `<div class="err">${esc(e.message)}</div>`; $("impMeta").textContent = "failed";
+    setExpo(["Alert", "Review", "Clear", "Suppliers on alert"], ["–", "–", "–", "–"]);
+    showErr($("maperr"), "Assessment failed: " + e.message);
+  } finally { if (token === S.token) setBusy(false); }
+}
+function renderImpact() {
+  const a = S.assess; if (!a) return;
+  const x = a.exposure || {}, th = thresholds();
+  setExpo(["Alert", "Review", "Clear", "Suppliers on alert"], [fInt(x.alert), fInt(x.review), fInt(x.clear), fInt(x.suppliers_alert)]);
+  const all = a.impacts || [], list = all.slice(0, 60);
+  $("impMeta").textContent = all.length > list.length ? `top ${list.length} of ${fInt(all.length)}` : `${fInt(all.length)} sites`;
+  $("impList").innerHTML = list.length ? list.map((i) => impRow(i, th)).join("") : `<div class="empty">No supplier sites within reach of this event.</div>`;
+}
+$("impList").addEventListener("click", (e) => {
+  const row = e.target.closest(".imp"); if (row) { selectSite(Number(row.dataset.site), true); return; }
+  const gx = e.target.closest(".gx"); if (!gx) return;
+  if (e.target.closest(".tog")) { const id = gx.dataset.id; if (S.open.has(id)) S.open.delete(id); else S.open.add(id); renderGlobal(); return; }
+  if (!S.busy) assess(gx.dataset.id);
+});
+function selectSite(id, fly) {
+  S.selSite = id;
+  document.querySelectorAll(".imp").forEach((r) => r.classList.toggle("sel", Number(r.dataset.site) === id));
+  const s = siteById.get(id);
+  if (fly && s && s.lat != null) flyTo(s.lon, s.lat, 0, true);
+  if (!fly) { const row = document.querySelector(`.imp[data-site="${id}"]`); if (row) row.scrollIntoView({ block: "nearest" }); }
+  placeOverlay();
+}
+
+// ---------- decision engine + race
+function renderEngine() {
+  const cell = (l, v) => `<div class="stat"><span class="lbl">${l}</span><span class="num">${v}</span></div>`;
+  if (S.mode === "focus" && S.assess) {
+    const d = S.assess.drex || {};
+    $("stats").innerHTML = cell("Model", esc(d.model || "–")) + cell("Calls", fInt(d.calls)) + cell("Decisions", fInt(d.decisions)) +
+      cell("Time", fMs(d.ms)) + cell("Input tokens", fInt(d.input_tokens)) + cell("Cost", fUsd(d.cost_usd)) + cell("Per decision", d.decisions ? fMs(d.ms / d.decisions) : "–");
+    return;
+  }
+  const o = S.overview, t = (o && o.totals) || {};
+  if (!o || o.warming) { $("stats").innerHTML = `<div class="empty" style="padding:0">Drex is making the first pass over every live event…</div>`; return; }
+  $("stats").innerHTML = cell("Mode", "live watch") + cell("Events assessed", fInt(t.events != null ? t.events : (o.events || []).length)) + cell("Decisions", fInt(t.decisions)) +
+    cell("Time", fMs(t.ms)) + cell("Cost", fUsd(t.cost_usd)) + cell("Per decision", t.decisions ? fMs(t.ms / t.decisions) : "–");
+  if (!$("raceOut").innerHTML) $("raceOut").innerHTML = `<small>Select an event: the same decisions are raced through Claude automatically.</small>`;
+}
+function setClaudeOff() { $("claudeCell").innerHTML = `<span class="off">Claude key not set</span>`; $("vClaude").textContent = "–"; }
+function setClaudeBar() { $("claudeCell").innerHTML = `<div class="track cl" id="trClaude"><i></i></div>`; }
+function resetRace() {
+  showErr($("raceErr"), ""); $("raceOut").innerHTML = ""; $("vDrex").textContent = "–"; $("vClaude").textContent = "–";
+  $("trDrex").classList.remove("wait"); const b = $("trDrex").firstElementChild; b.style.transition = "none"; b.style.width = "0";
+  if (S.state && S.state.claude_enabled) setClaudeBar(); else setClaudeOff();
+}
+function runBar(track, frac, secs) {
+  const b = track.firstElementChild; track.classList.remove("wait");
+  b.style.transition = "none"; b.style.width = "0"; void b.offsetWidth;
+  b.style.transition = `width ${secs.toFixed(2)}s linear`; b.style.width = Math.max(0.6, frac * 100) + "%";
+}
+async function runRace(force, retried) {
+  if (!S.assess || S.mode !== "focus") return;
+  const id = S.selId, token = S.token; resetRace(); $("btnRace").disabled = true; $("btnRace").textContent = "Racing…";
+  $("trDrex").classList.add("wait"); if ($("trClaude")) $("trClaude").classList.add("wait");
+  try {
+    const r = await api("/api/race", force ? { event_id: id, force: true } : { event_id: id });
+    if (token !== S.token) return;
+    const dx = r.drex || {}, cl = r.claude;
+    const maxMs = Math.max(dx.ms || 0, cl ? cl.ms || 0 : 0, 1), T = 2.6;
+    runBar($("trDrex"), (dx.ms || 0) / maxMs, Math.max(0.12, T * (dx.ms || 0) / maxMs));
+    $("vDrex").textContent = `${fMs(dx.ms)} · ${fUsd(dx.cost_usd)}`;
+    if (cl) {
+      setClaudeBar(); runBar($("trClaude"), (cl.ms || 0) / maxMs, Math.max(0.12, T * (cl.ms || 0) / maxMs));
+      $("vClaude").textContent = `${fMs(cl.ms)} · ${fUsd(cl.cost_usd)}`;
+      $("raceOut").innerHTML = `${fX(r.speedup)} FASTER · ${fX(r.cheaper)} CHEAPER <small>· agrees with ${esc(cl.model || "Claude")} on ${fPct(cl.agreement)} of ${fInt(r.sample)} disrupted yes/no calls · ${fInt(cl.decisions)} decisions each</small>`;
+    } else {
+      setClaudeOff();
+      $("raceOut").innerHTML = `<small>${esc(dx.model || "Drex")}: ${fInt(dx.decisions)} decisions on ${fInt(r.sample)} sites. Claude key not set, so there is nothing to compare.</small>`;
+    }
+  } catch (e) {
+    if (token !== S.token) return;
+    $("trDrex").classList.remove("wait"); if ($("trClaude")) $("trClaude").classList.remove("wait");
+    if (!force && !retried) { setTimeout(() => { if (token === S.token) runRace(false, true); }, 2500); return; }
+    $("raceOut").innerHTML = `<small style="color:var(--red)">Race failed: ${esc(e.message)}. Press RACE VS CLAUDE to try again.</small>`;
+  } finally { $("btnRace").textContent = "Race vs Claude"; if (token === S.token) $("btnRace").disabled = S.busy || !S.assess; }
+}
+$("btnRace").addEventListener("click", () => { if (S.assess && !S.busy) runRace(true); });
+
+// ---------- brief
+function resetBrief() { $("briefText").className = "empty"; $("briefText").textContent = "Select an event, then write the brief."; $("briefMeta").textContent = ""; showErr($("briefErr"), ""); }
+$("btnBrief").addEventListener("click", async () => {
+  if (!S.assess || S.busy) return;
+  const id = S.selId, token = S.token; showErr($("briefErr"), ""); $("btnBrief").disabled = true; $("btnBrief").textContent = "Writing…";
+  $("briefText").className = "empty"; $("briefText").textContent = "The agent is writing the incident brief…";
+  try {
+    const b = await api("/api/brief", { event_id: id });
+    if (token !== S.token) return;
+    $("briefText").className = ""; $("briefText").textContent = b.text || "(empty brief)";
+    $("briefMeta").textContent = `${b.engine === "intern" ? "Intern agent" : "DeepInfra direct"} · ${b.secs != null ? Number(b.secs).toFixed(1) + " s" : ""}`;
+  } catch (e) {
+    if (token !== S.token) return;
+    $("briefText").textContent = ""; showErr($("briefErr"), "Brief failed: " + e.message);
+  } finally { $("btnBrief").textContent = "Write brief"; if (token === S.token) $("btnBrief").disabled = S.busy || !S.assess; }
+});
+
+// ---------- track record
+$("btnTrack").addEventListener("click", () => $("drawer").classList.toggle("on"));
+$("btnClose").addEventListener("click", () => $("drawer").classList.remove("on"));
+const norm = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+async function loadBenchmark() {
+  try {
+    const b = await api("/api/benchmark"), sc = b.scenarios || [], t = b.totals || {};
+    if (!sc.length) { $("bmBody").innerHTML = `<div class="empty">No past incidents have been scored yet.</div>`; return; }
+    $("bmBody").innerHTML = sc.map((s) => {
+      const flagged = (s.flagged || []).map(norm);
+      const hit = (name) => { const n = norm(name); return flagged.some((f) => f && n && (f.includes(n) || n.includes(f))); };
+      const rep = (s.reported || []).map(norm);
+      const extra = (s.flagged || []).filter((f) => { const n = norm(f); return !rep.some((r) => r && n && (r.includes(n) || n.includes(r))); });
+      return `<div class="bm"><h4>${esc(s.title)}</h4><span class="score">${fInt(s.hits)} / ${fInt(s.total)}</span> <span class="lbl">reported suppliers flagged</span>
+        <div class="lbl" style="margin-top:8px">Publicly reported as affected</div>
+        <div class="chips">${(s.reported || []).map((r) => `<span class="chip ${hit(r) ? "hit" : "miss"}">${esc(r)}</span>`).join("") || '<span class="chip">none listed</span>'}</div>
+        <div class="lbl">Also flagged (no public report found)</div>
+        <div class="chips">${extra.slice(0, 24).map((r) => `<span class="chip">${esc(r)}</span>`).join("") || '<span class="chip">none</span>'}${extra.length > 24 ? `<span class="chip">+${extra.length - 24} more</span>` : ""}</div>
+        ${s.note ? `<p>${esc(s.note)}</p>` : ""}</div>`;
+    }).join("") + `<div class="bm"><div class="lbl">Totals across past incidents</div><div class="stats" style="border:0;padding:6px 0 0">
+        <div class="stat"><span class="lbl">Decisions</span><span class="num">${fInt(t.decisions)}</span></div>
+        <div class="stat"><span class="lbl">Time</span><span class="num">${fMs(t.ms)}</span></div>
+        <div class="stat"><span class="lbl">Cost</span><span class="num">${fUsd(t.cost_usd)}</span></div></div></div>`;
+  } catch (e) { $("bmBody").innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+
+// ---------- boot / company switch
+async function loadState() {
+  const co = S.coTok;
+  try {
+    const st = await api("/api/state");
+    if (co !== S.coTok) return;
+    S.state = st; if (st.company_key != null) S.company = st.company_key;
+    siteById.clear(); (st.sites || []).forEach((s) => siteById.set(s.id, s)); renderTop(); drawSites(); resetRace();
+  } catch (e) {
+    if (co !== S.coTok) return;
+    $("name").textContent = "Offline"; $("tagline").textContent = e.message; showErr($("maperr"), "Could not load suppliers: " + e.message);
+  }
+}
+async function switchCompany(key) {
+  S.coTok++; S.token++; S.company = key || null; S.overview = null; S.ovErr = ""; S.open = new Set(); S.openInit = false;
+  tlStop(); S.tl = 1;
+  S.mode = "global"; S.selId = null; S.assess = null; S.selSite = null; S.impactBySite = new Map(); S.events = { live: [], scenarios: [] };
+  setBusy(false); resetRace(); resetBrief(); showErr($("maperr"), ""); $("feedList").innerHTML = `<div class="empty">Loading events…</div>`;
+  renderGlobal(); renderEngine(); renderTicker(true); drawEvents(true);
+  await loadState(); loadEvents(true); loadBenchmark(); pollOverview();
+}
+async function boot() {
+  layoutMap();
+  d3.json("/static/world.json").then((w) => { world = topojson.feature(w, w.objects.countries).features; layoutMap(); })
+    .catch(() => showErr($("maperr"), "Could not load the world map file."));
+  renderGlobal(); renderEngine();
+  await loadState();
+  loadEvents(true); loadBenchmark(); pollOverview();
+  setInterval(() => loadEvents(false), 30000);
+}
+let rz = null;
+window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { svg.call(zoom.transform, d3.zoomIdentity); layoutMap(); drawEvents(S.mode === "focus"); }, 200); });
+boot();
+</script>
+</body>
+</html>

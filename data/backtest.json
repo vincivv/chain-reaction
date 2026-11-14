@@ -1,0 +1,235 @@
+[
+ {
+  "id": "scn:taiwan-2024",
+  "usgs_id": "us7000m9g4",
+  "kind": "earthquake",
+  "title": "M 7.4 - 15 km S of Hualien City, Taiwan",
+  "time": 1712102292173,
+  "lat": 23.8356,
+  "lon": 121.5976,
+  "magnitude": 7.4,
+  "depth_km": 40,
+  "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000m9g4",
+  "source": "USGS",
+  "note": "3 Apr 2024. Real past incident used as a test. Only TSMC of the reported companies is on Apple's FY2023 supplier list.",
+  "reported": [
+   {
+    "company": "TSMC",
+    "aliases": [
+     "Taiwan Semiconductor Manufacturing Company Limited",
+     "Taiwan Semiconductor Manufacturing Company"
+    ],
+    "in_supplier_list": true,
+    "what": "evacuated some fabs, a few tools damaged, staff returned same day",
+    "source_url": "https://www.cnbc.com/amp/2024/04/03/tsmc-evacuates-some-factory-lines-after-taiwan-earthquake.html"
+   },
+   {
+    "company": "UMC",
+    "aliases": [
+     "United Microelectronics Corporation",
+     "United Microelectronics"
+    ],
+    "in_supplier_list": false,
+    "what": "halted machinery at some plants, evacuated Hsinchu and Tainan facilities",
+    "source_url": "https://www.datacenterknowledge.com/data-center-chips/tsmc-halts-some-chipmaking-evacuates-plants-after-major-quake"
+   },
+   {
+    "company": "AUO",
+    "aliases": [
+     "AU Optronics Corporation",
+     "AU Optronics",
+     "AUO Corporation"
+    ],
+    "in_supplier_list": false,
+    "what": "Hsinchu workers evacuated, most machinery shut down, Longtan capacity partly affected",
+    "source_url": "https://www.trendforce.com/news/2024/04/03/news-taiwan-hit-by-7-2-magnitude-earthquake-tsmc-and-other-semiconductor-panel-supply-chain-updates/"
+   },
+   {
+    "company": "Innolux",
+    "aliases": [
+     "Innolux Corporation",
+     "Innolux"
+    ],
+    "in_supplier_list": false,
+    "what": "precautionary shutdown of some Hsinchu lines, resumed the same day",
+    "source_url": "https://www.trendforce.com/news/2024/04/03/news-taiwan-hit-by-7-2-magnitude-earthquake-tsmc-and-other-semiconductor-panel-supply-chain-updates/"
+   }
+  ]
+ },
+ {
+  "id": "scn:noto-2024",
+  "usgs_id": "us6000m0xl",
+  "kind": "earthquake",
+  "title": "M 7.5 - 2024 Noto Peninsula, Japan Earthquake",
+  "time": 1704093009476,
+  "lat": 37.4874,
+  "lon": 137.271,
+  "magnitude": 7.5,
+  "depth_km": 10,
+  "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000m0xl",
+  "source": "USGS",
+  "note": "1 Jan 2024. Real past incident used as a test. Murata and Japan Display are on Apple's FY2023 supplier list; Toshiba and Kokusai Electric are not.",
+  "reported": [
+   {
+    "company": "Murata",
+    "aliases": [
+     "Murata Manufacturing Company Limited",
+     "Murata Manufacturing"
+    ],
+    "in_supplier_list": true,
+    "what": "several plants suspended; Komatsu restarted 10 Jan, others took weeks to months",
+    "source_url": "https://www.z2data.com/es/insights/japan-noto-earthquake-manufacturer-updates/"
+   },
+   {
+    "company": "Japan Display",
+    "aliases": [
+     "Japan Display Incorporated",
+     "Japan Display"
+    ],
+    "in_supplier_list": true,
+    "what": "pipe damage at Kawakita plant; LCD production later fully resumed",
+    "source_url": "https://www.z2data.com/es/insights/japan-noto-earthquake-manufacturer-updates/"
+   },
+   {
+    "company": "Toshiba (Kaga Toshiba Electronics)",
+    "aliases": [
+     "Toshiba Corporation",
+     "Kaga Toshiba Electronics",
+     "Toshiba"
+    ],
+    "in_supplier_list": false,
+    "what": "power-chip plant halted, cleanroom piping and quartz damaged, restart about a month later",
+    "source_url": "https://www.theregister.com/2024/01/03/japanese_earthquake_disrupts_chip_industry"
+   },
+   {
+    "company": "Kokusai Electric",
+    "aliases": [
+     "Kokusai Electric Corporation",
+     "Kokusai Electric"
+    ],
+    "in_supplier_list": false,
+    "what": "Toyama factory stopped after cracks in ceiling and walls",
+    "source_url": "https://www.theregister.com/2024/01/03/japanese_earthquake_disrupts_chip_industry"
+   }
+  ]
+ },
+ {
+  "id": "scn:fukushima-2022",
+  "usgs_id": "us6000h519",
+  "kind": "earthquake",
+  "title": "M 7.3 - 57 km ENE of Namie, Japan",
+  "time": 1647441390997,
+  "lat": 37.7132,
+  "lon": 141.5793,
+  "magnitude": 7.3,
+  "depth_km": 41,
+  "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000h519",
+  "source": "USGS",
+  "note": "16 Mar 2022. Real past incident used as a test. All four reported companies are on Apple's FY2023 supplier list.",
+  "reported": [
+   {
+    "company": "Renesas",
+    "aliases": [
+     "Renesas Electronics Corporation",
+     "Renesas Electronics"
+    ],
+    "in_supplier_list": true,
+    "what": "Naka, Takasaki and Yonezawa fabs shut, full restart about a week later",
+    "source_url": "https://datacenterdynamics.com/en/news/japans-73-magnitude-earthquake-caused-chip-fab-shut-downs"
+   },
+   {
+    "company": "Murata",
+    "aliases": [
+     "Murata Manufacturing Company Limited",
+     "Murata Manufacturing"
+    ],
+    "in_supplier_list": true,
+    "what": "operations suspended at four factories, two restarted within two days",
+    "source_url": "https://www.cnbc.com/amp/2022/03/17/quake-in-japan-kills-two-halts-factories-cuts-power-to-thousands-of-homes.html"
+   },
+   {
+    "company": "Sony",
+    "aliases": [
+     "Sony Corporation",
+     "Sony Group Corporation",
+     "Sony Semiconductor"
+    ],
+    "in_supplier_list": true,
+    "what": "production halted at two Miyagi plants and one Yamagata plant",
+    "source_url": "https://www.cnbc.com/amp/2022/03/17/quake-in-japan-kills-two-halts-factories-cuts-power-to-thousands-of-homes.html"
+   },
+   {
+    "company": "Kioxia",
+    "aliases": [
+     "Kioxia Holdings Corporation",
+     "Kioxia"
+    ],
+    "in_supplier_list": true,
+    "what": "K1 fab in Kitakami damaged, wafer supply affected",
+    "source_url": "https://datacenterdynamics.com/en/news/japans-73-magnitude-earthquake-caused-chip-fab-shut-downs"
+   }
+  ]
+ },
+ {
+  "id": "scn:kumamoto-2016",
+  "usgs_id": "us20005iis",
+  "kind": "earthquake",
+  "title": "M 7.0 - 6 km ESE of Kumamoto, Japan",
+  "time": 1460737506220,
+  "lat": 32.7906,
+  "lon": 130.7543,
+  "magnitude": 7.0,
+  "depth_km": 10,
+  "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us20005iis",
+  "source": "USGS",
+  "note": "15 Apr 2016 UTC (16 Apr local) mainshock. Real past incident used as a test. Sony and Renesas are on Apple's FY2023 supplier list; Mitsubishi Electric is not. The supplier list is from 2023, so site locations may differ from 2016.",
+  "reported": [
+   {
+    "company": "Sony",
+    "aliases": [
+     "Sony Corporation",
+     "Sony Group Corporation",
+     "Sony Semiconductor"
+    ],
+    "in_supplier_list": true,
+    "what": "Kumamoto image-sensor plant halted, closure extended; Nagasaki and Oita briefly paused",
+    "source_url": "https://fortune.com/2016/04/16/japan-quakes-disrupt-sony-image-sensors-apple-iphones/"
+   },
+   {
+    "company": "Renesas",
+    "aliases": [
+     "Renesas Electronics Corporation",
+     "Renesas Electronics"
+    ],
+    "in_supplier_list": true,
+    "what": "Kawashiri plant in Kumamoto halted, some equipment damaged",
+    "source_url": "https://www.computerworld.com/article/3057269/japan-earthquakes-disrupt-electronics-supply-chain.html"
+   },
+   {
+    "company": "Mitsubishi Electric",
+    "aliases": [
+     "Mitsubishi Electric Corporation",
+     "Mitsubishi Electric"
+    ],
+    "in_supplier_list": false,
+    "what": "two Kumamoto plants making LCD modules and power chips halted",
+    "source_url": "https://business-standard.com/article/reuters/second-deadly-quake-prolongs-production-halts-in-japan-s-southern-manufacturing-hub-116041600161_1.html"
+   }
+  ]
+ },
+ {
+  "id": "scn:cianjur-2022",
+  "usgs_id": "us7000ir9t",
+  "kind": "earthquake",
+  "title": "M 5.6 - 11 km NE of Sukabumi, Indonesia",
+  "time": 1669011667066,
+  "lat": -6.836,
+  "lon": 106.9968,
+  "magnitude": 5.6,
+  "depth_km": 10,
+  "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000ir9t",
+  "source": "USGS",
+  "note": "21 Nov 2022, Cianjur, West Java, Indonesia. Real past incident. No list of affected suppliers was collected, so it is not scored.",
+  "reported": []
+ }
+]

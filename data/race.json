@@ -1,0 +1,64 @@
+{
+ "runs": [
+  {
+   "id": "scn:taiwan-2024",
+   "sample": 12,
+   "drex_ms": 413,
+   "drex_cost": 0.000345,
+   "claude_ms": 5079,
+   "claude_cost": 0.025784,
+   "agreement": 0.4166666666666667,
+   "speedup": 12.3,
+   "cheaper": 74.8,
+   "claude_model": "claude-opus-5-5"
+  },
+  {
+   "id": "scn:noto-2024",
+   "sample": 12,
+   "drex_ms": 479,
+   "drex_cost": 0.000343,
+   "claude_ms": 3984,
+   "claude_cost": 0.025372,
+   "agreement": 0.8333333333333334,
+   "speedup": 8.3,
+   "cheaper": 73.9,
+   "claude_model": "claude-opus-5-5"
+  },
+  {
+   "id": "scn:fukushima-2022",
+   "sample": 12,
+   "drex_ms": 339,
+   "drex_cost": 0.000344,
+   "claude_ms": 4132,
+   "claude_cost": 0.0255,
+   "agreement": 0.9166666666666666,
+   "speedup": 12.2,
+   "cheaper": 74.1,
+   "claude_model": "claude-opus-5-5"
+  },
+  {
+   "id": "scn:kumamoto-2016",
+   "sample": 12,
+   "drex_ms": 314,
+   "drex_cost": 0.000342,
+   "claude_ms": 4605,
+   "claude_cost": 0.02564,
+   "agreement": 1.0,
+   "speedup": 14.7,
+   "cheaper": 74.9,
+   "claude_model": "claude-opus-5-5"
+  }
+ ],
+ "totals": {
+  "incidents": 4,
+  "sites": 48,
+  "drex_ms": 1545,
+  "claude_ms": 17800,
+  "drex_cost": 0.001374,
+  "claude_cost": 0.102296,
+  "agreement": 0.792,
+  "claude_model": "claude-opus-5-5",
+  "speedup": 11.5,
+  "cheaper": 74.5
+ }
+}
