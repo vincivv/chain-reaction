@@ -170,6 +170,8 @@ button,select{font:inherit;color:inherit}
 #raceOut small{font-weight:400;color:var(--dim);font-size:10.5px;text-shadow:none}
 #briefText{padding:8px 12px;white-space:pre-wrap;font-size:12px;line-height:1.45;color:var(--txt)}
 #briefMeta{font:10px var(--mono);color:var(--dim);letter-spacing:.08em}
+#briefText .hl-sup{color:#6ff3ff;font-weight:600;text-shadow:0 0 6px rgba(80,235,255,.85),0 0 14px rgba(80,235,255,.35)}
+#briefText .hl-pct{color:#ff5c8a;font-weight:700;font-family:var(--mono);text-shadow:0 0 6px rgba(255,70,120,.9),0 0 14px rgba(255,70,120,.4)}
 /* drawer */
 #drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100vw);background:rgba(8,12,18,.96);border-left:1px solid var(--cyan-dim);z-index:30;transform:translateX(102%);transition:transform .22s ease;display:flex;flex-direction:column}
 #drawer.on{transform:none}
@@ -399,7 +401,7 @@ const circleGeo = (ev, km) => d3.geoCircle().center([ev.lon, ev.lat]).radius(Mat
 const TL_WINDOW_DAYS = 30, TL_NOW_ALL = true;
 function tlBounds() {
   const ts = ((S.overview && S.overview.events) || []).map((o) => o.event && o.event.time).filter((t) => t != null);
-  const t1 = Date.now(), t0 = ts.length ? Math.min(...ts) - 3600e3 : t1 - 7 * 86400e3;
+  const t1 = Date.now(), t0 = ts.length ? Math.min(...ts) : t1 - 7 * 86400e3;      // far left = the oldest event the server is watching
   return [Math.min(t0, t1 - 3600e3), t1];
 }
 const tlTime = () => { const [a, b] = tlBounds(); return a + (b - a) * S.tl; };
@@ -611,7 +613,7 @@ function renderGlobal() {
   $("impMeta").textContent = o && o.updated ? "live · " + new Date(o.updated).toISOString().slice(11, 16) + "Z" : "";
   if (S.ovErr && !o) { $("impList").innerHTML = `<div class="err">Global watch unavailable: ${esc(S.ovErr)}</div>`; return; }
   if (!o || o.warming) { $("impList").innerHTML = `<div class="empty">DREX IS ASSESSING LIVE EVENTS…</div>`; return; }
-  if (!evs.length) { $("impList").innerHTML = `<div class="empty">${atNow ? "No live event reaches a supplier site right now. Open PAST INCIDENTS to replay a real one." : "No event was active in the 7 days before this point on the timeline."}</div>`; return; }
+  if (!evs.length) { $("impList").innerHTML = `<div class="empty">${atNow ? "No live event reaches a supplier site right now. Open PAST INCIDENTS to replay a real one." : `No event was active in the ${TL_WINDOW_DAYS} days before this point on the timeline.`}</div>`; return; }
   const th = thresholds();
   $("impList").innerHTML = evs.map((x) => {
     const ev = x.event, ex = x.exposure || {}, imps = x.impacts || [], open = S.open.has(ev.id), hot = (ex.alert || 0) > 0;
@@ -759,6 +761,24 @@ async function runRace(force, retried) {
 $("btnRace").addEventListener("click", () => { if (S.assess && !S.busy) runRace(true); });
 
 // ---------- brief
+// Supplier names (and their short forms) glow cyan, percentages glow pink.
+function supplierAliases(impacts) {
+  const out = new Set(), drop = /\b(corporation|corp\.?|incorporated|inc\.?|company|co\.?|limited|ltd\.?|pvt\.?|private|holdings?|group|n\.v\.|ag|plc|llc|s\.a\.|gmbh|international|industry|industries|technologies|technology)\b/gi;
+  for (const i of impacts || []) {
+    const full = String(i.supplier || "").trim(); if (!full) continue;
+    out.add(full);
+    const paren = full.match(/\(([^)]+)\)/); if (paren) out.add(paren[1].trim());
+    const bare = full.replace(/\([^)]*\)/g, " ").replace(drop, " ").replace(/[.,]/g, " ").replace(/\s+/g, " ").trim();
+    if (bare.length >= 3) out.add(bare);
+  }
+  return [...out].filter((a) => a.length >= 3).sort((a, b) => b.length - a.length);
+}
+function highlightBrief(text, impacts) {
+  let html = esc(text || "");
+  const al = supplierAliases(impacts).map((a) => esc(a).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  if (al.length) html = html.replace(new RegExp("(" + al.join("|") + ")", "gi"), '<span class="hl-sup">$1</span>');
+  return html.replace(/(\d+(?:\.\d+)?\s?%)/g, '<span class="hl-pct">$1</span>');
+}
 function resetBrief() { $("briefText").className = "empty"; $("briefText").textContent = "Select an event, then write the brief."; $("briefMeta").textContent = ""; showErr($("briefErr"), ""); }
 $("btnBrief").addEventListener("click", async () => {
   if (!S.assess || S.busy) return;
@@ -767,7 +787,7 @@ $("btnBrief").addEventListener("click", async () => {
   try {
     const b = await api("/api/brief", { event_id: id });
     if (token !== S.token) return;
-    $("briefText").className = ""; $("briefText").textContent = b.text || "(empty brief)";
+    $("briefText").className = ""; $("briefText").innerHTML = b.text ? highlightBrief(b.text, S.assess && S.assess.impacts) : "(empty brief)";
     $("briefMeta").textContent = `${b.engine === "intern" ? "Intern agent" : "DeepInfra direct"} · ${b.secs != null ? Number(b.secs).toFixed(1) + " s" : ""}`;
   } catch (e) {
     if (token !== S.token) return;
